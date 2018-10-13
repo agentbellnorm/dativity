@@ -36,13 +36,30 @@
   (->> (uber/nodes process-definition)
        (filter (fn [node] (= :action (uber/attr process-definition node :type))))))
 
-(defn case-has-data?
+(defn case-has-commited-data?
   {:test (fn []
-           (is (case-has-data? {:a "hejhopp" :b "yoloswag"} :a))
-           (is (case-has-data? {:a "hejhopp" :b "yoloswag"} :b))
-           (is (false? (case-has-data? {:a "hejhopp" :b "yoloswag"} :c))))}
+           (is (case-has-commited-data? {:a {:commited true
+                                             :data "hejhopp"}
+                                         :b {:commited true
+                                             :data "yoloswag"}}
+                                        :a))
+           (is (case-has-commited-data? {:a {:commited true
+                                             :data "hejhopp"}
+                                         :b {:commited true
+                                             :data "yoloswag"}}
+                                        :b))
+           (is (false? (case-has-commited-data? {:a {:commited false
+                                                     :data "hejhopp"}
+                                                 :b {:commited true
+                                                     :data "yoloswag"}}
+                                                :a)))
+           (is (false? (case-has-commited-data? {:b {:commited true
+                                                     :data "yoloswag"}}
+                                                :a))))}
   [case data-object]
-  (not (nil? (data-object case))))
+  (if (nil? (data-object case))
+    false
+    (:commited (data-object case))))
 
 (defn data-prereqs-for-action
   {:test (fn []
@@ -84,7 +101,7 @@
   (->> (all-actions process-definition)
        (reduce (fn [acc action]
                  (let [prereqs (data-prereqs-for-action process-definition action)]
-                   (if (every? true? (map (fn [prereq] (case-has-data? case prereq)) prereqs))
+                   (if (every? true? (map (fn [prereq] (case-has-commited-data? case prereq)) prereqs))
                      (conj acc action)
                      acc)))
                #{})))
@@ -101,7 +118,7 @@
                  (let [produced-data (data-produced-by-action process-definition action)]
                    (cond
                      (empty? produced-data) acc
-                     (every? true? (map (fn [data] (case-has-data? case data)) produced-data)) (conj acc action)
+                     (every? true? (map (fn [data] (case-has-commited-data? case data)) produced-data)) (conj acc action)
                      :default acc)))
                #{})))
 
