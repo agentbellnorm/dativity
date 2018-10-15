@@ -2,7 +2,7 @@
   (:require [ubergraph.core :as uber]
             [clojure.test :refer :all]))
 
-(defn create-empty-case
+(defn empty-case-model
   []
   (uber/multigraph))
 
@@ -21,19 +21,19 @@
   [name {:type  :role
          :color :orange}])
 
-(defn production-relationship
+(defn action-produces
   [node creates]
   [node creates {:association :produces
                  :color       :green
                  :label       "produces"}])
 
-(defn action-prerequisite
+(defn action-requires
   [node prereq]
   [node prereq {:association :requires
                 :color       :red
                 :label       "requires"}])
 
-(defn role-can-perform
+(defn role-performs
   [role action]
   [role action {:association :performs
                 :color       :orange
@@ -45,22 +45,22 @@
                          :save   {:filename name-with-path :format :png}}))
 
 
-(defn add-node-to-case
+(defn add-entity-to-model
   {:test (fn []
            (is (= 2
-                  (-> (create-empty-case)
-                      (add-node-to-case (action :add-customer-information))
-                      (add-node-to-case (action :add-phone-number))
+                  (-> (empty-case-model)
+                      (add-entity-to-model (action :add-customer-information))
+                      (add-entity-to-model (action :add-phone-number))
                       (uber/count-nodes)))))}
   [case node]
   (uber/add-nodes-with-attrs case node))
 
-(defn add-relationship-to-case
+(defn add-relationship-to-model
   {:test (fn []
-           (let [graph (-> (create-empty-case)
-                           (add-node-to-case (action :thing-to-do))
-                           (add-node-to-case (data :thing-to-know))
-                           (add-relationship-to-case (production-relationship :thing-to-do :thing-to-know)))]
+           (let [graph (-> (empty-case-model)
+                           (add-entity-to-model (action :thing-to-do))
+                           (add-entity-to-model (data :thing-to-know))
+                           (add-relationship-to-model (action-produces :thing-to-do :thing-to-know)))]
              (is (= 1 (uber/count-edges graph)))
              (is (= 2 (uber/count-nodes graph)))))}
    [case relationship]
