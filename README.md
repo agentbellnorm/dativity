@@ -6,7 +6,11 @@ Inspired by https://en.wikipedia.org/wiki/Artifact-centric_business_process_mode
 
 ## Usage
 
-Checkout test/dativity/core_test.clj for usage, and resources/case-graph.png for a process visualization.
+* To generate graph pictures, install [graphviz](https://graphviz.gitlab.io/download/):
+
+    `brew install graphviz`
+
+* Go to `test/dativity/core_test.clj` to study the API.
 
 ## License
 
