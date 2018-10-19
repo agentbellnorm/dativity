@@ -7,6 +7,7 @@
 (defn printreturn [x] (println x) x)
 
 (defn test-case-definition
+  "test graph for unit testing purposes, does not make sense really, but is simple."
   []
   (-> (define/empty-case-model)
       (define/add-entity-to-model (define/action :a))
@@ -56,10 +57,11 @@
 
 (defn all-actions
   {:test (fn []
-           (is (= (all-actions (test-case-definition)) [:a :d :f :g])))} ;todo: make set
+           (is (= (all-actions (test-case-definition)) #{:a :d :f :g})))}
   [process-definition]
   (->> (uber/nodes process-definition)
-       (filter (fn [node] (= :action (uber/attr process-definition node :type))))))
+       (filter (fn [node] (= :action (uber/attr process-definition node :type))))
+       (set)))
 
 (defn case-has-committed-data?
   {:test (fn []
@@ -203,6 +205,7 @@
   (update-in case [key] assoc :committed false))
 
 (defn- uncommit-datas-produced-by-action
+  "uncommits all data nodes that have a production edge from the specified action node"
   {:test (fn []
            (is (true? (as-> {} case
                             (add-data-to-case case :e "ey")
@@ -220,6 +223,8 @@
              datas))))
 
 (defn invalidate-action
+  "Uncommits the data produced by the specified action, and then recursively performs
+  the same procedure on all actions that require the data produced by the specified action."
   {:test (fn []
            (is (true? (as-> {} case
                             (add-data-to-case case :c "far out")
@@ -234,7 +239,6 @@
                             (add-data-to-case case :a "dope")
                             (add-data-to-case case :h "fuego")
                             (invalidate-action (test-case-definition) case :g)
-                            (printreturn case)
                             (not-any? true? [(case-has-committed-data? case :c)
                                              (case-has-committed-data? case :e)
                                              (case-has-committed-data? case :a)
@@ -245,7 +249,6 @@
                             (add-data-to-case case :a "dope")
                             (add-data-to-case case :h "fuego")
                             (invalidate-action (test-case-definition) case :d)
-                            (printreturn case)
                             (and (not-any? false? [(case-has-committed-data? case :h)
                                                    (case-has-committed-data? case :e)])
                                  (not-any? true? [(case-has-committed-data? case :c)
@@ -259,3 +262,4 @@
       (recur (uncommit-datas-produced-by-action process-definition loop-case loop-action)
              (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-actions) loop-actions)) seen-actions)
              (union #{loop-action} seen-actions)))))
+
