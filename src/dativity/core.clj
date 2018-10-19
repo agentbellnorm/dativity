@@ -12,9 +12,11 @@
       (define/add-entity-to-model (define/action :a))
       (define/add-entity-to-model (define/action :d))
       (define/add-entity-to-model (define/action :f))
-      (define/add-entity-to-model (define/role :b))
+      (define/add-entity-to-model (define/action :g))
+      (define/add-entity-to-model (define/role :b))         ; doesn't make sense but needs to be some kind of entity
       (define/add-entity-to-model (define/role :c))
       (define/add-entity-to-model (define/role :e))
+      (define/add-entity-to-model (define/role :h))
       (define/add-relationship-to-model (define/action-requires :a :b))
       (define/add-relationship-to-model (define/action-requires :a :e))
       (define/add-relationship-to-model (define/action-requires :b :e))
@@ -22,6 +24,8 @@
       (define/add-relationship-to-model (define/action-produces :b :c))
       (define/add-relationship-to-model (define/action-produces :d :a))
       (define/add-relationship-to-model (define/action-produces :f :c))
+      (define/add-relationship-to-model (define/action-produces :g :e))
+      (define/add-relationship-to-model (define/action-produces :g :h))
       (define/add-relationship-to-model (define/role-performs :a :c))
       (define/add-relationship-to-model (define/role-performs :c :d))))
 
@@ -52,7 +56,7 @@
 
 (defn all-actions
   {:test (fn []
-           (is (= (all-actions (test-case-definition)) [:a :d :f])))}
+           (is (= (all-actions (test-case-definition)) [:a :d :f :g])))} ;todo: make set
   [process-definition]
   (->> (uber/nodes process-definition)
        (filter (fn [node] (= :action (uber/attr process-definition node :type))))))
@@ -112,15 +116,32 @@
        (map (fn [edge] (:dest edge)))
        (set)))
 
-(defn actions-with-prerequisites-present
+(defn actions-that-require-data
   {:test (fn []
-           (is (= (actions-with-prerequisites-present (test-case-definition) {}) #{:f}))
-           (is (= (actions-with-prerequisites-present (test-case-definition) (add-data-to-case {} :e "yeah")) #{:d :f}))
-           (is (= (actions-with-prerequisites-present (test-case-definition) (add-data-to-case {} :b "no")) #{:f}))
-           (is (= (actions-with-prerequisites-present (test-case-definition) (-> {}
-                                                                                 (add-data-to-case :e "yeah")
-                                                                                 (add-data-to-case :b "no")))
-                  #{:a :d :f})))}
+           (is (= (actions-that-require-data (test-case-definition) :e) #{:b :d :a}))
+           (is (= (actions-that-require-data (test-case-definition) :b) #{:a})))}
+  [process-definition data]
+  (->> (uber/find-edges process-definition {:dest        data
+                                            :association :requires})
+       (map (fn [edge] (:src edge)))
+       (set)))
+
+(defn- actions-that-can-be-performed-after-action
+  {:test (fn []
+           (is (= (actions-that-can-be-performed-after-action (test-case-definition) :g) #{:a :b :d})))}
+  [process-definition action]
+  (apply union (map (fn [data] (actions-that-require-data process-definition data))
+                    (data-produced-by-action process-definition action))))
+
+(defn actions-with-prereqs-present
+  {:test (fn []
+           (is (= (actions-with-prereqs-present (test-case-definition) {}) #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :e "yeah")) #{:d :f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :b "no")) #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
+                                                                           (add-data-to-case :e "yeah")
+                                                                           (add-data-to-case :b "no")))
+                  #{:a :d :f :g})))}
   [process-definition case]
   (->> (all-actions process-definition)
        (reduce (fn [acc action]
@@ -150,7 +171,7 @@
                #{})))
 
 (defn next-actions
-  ([process-definition case] (difference (actions-with-prerequisites-present process-definition case) (actions-performed process-definition case)))
+  ([process-definition case] (difference (actions-with-prereqs-present process-definition case) (actions-performed process-definition case)))
   ([process-definition case role] (intersection (next-actions process-definition case) (actions-performed-by-role process-definition role))))
 
 (defn action-allowed?
@@ -167,4 +188,74 @@
                                                                    (add-data-to-case :b "yolo")
                                                                    (add-data-to-case :c "yeah")) :d))))}
   [process-definition case action]
-  (contains? (actions-with-prerequisites-present process-definition case) action))
+  (contains? (actions-with-prereqs-present process-definition case) action))
+
+(defn- uncommit-data
+  {:test (fn []
+           (is (false? (-> (add-data-to-case {} :a "swell")
+                           (uncommit-data :a)
+                           (case-has-committed-data? :a))))
+           (is (true? (-> (add-data-to-case {} :a "swell")
+                          (add-data-to-case :b "turnt")
+                          (uncommit-data :a)
+                          (case-has-committed-data? :b)))))}
+  [case key]
+  (update-in case [key] assoc :committed false))
+
+(defn- uncommit-datas-produced-by-action
+  {:test (fn []
+           (is (true? (as-> {} case
+                            (add-data-to-case case :e "ey")
+                            (add-data-to-case case :h "kolasås")
+                            (add-data-to-case case :a "sås")
+                            (uncommit-datas-produced-by-action (test-case-definition) case :g)
+                            (every? false? [(case-has-committed-data? case :e)
+                                            (case-has-committed-data? case :h)])))))}
+  [process-definition case action]
+  (loop [loop-case case
+         [data & datas] (data-produced-by-action process-definition action)]
+    (if (nil? data)
+      loop-case
+      (recur (uncommit-data loop-case data)
+             datas))))
+
+(defn invalidate-action
+  {:test (fn []
+           (is (true? (as-> {} case
+                            (add-data-to-case case :c "far out")
+                            (add-data-to-case case :h "no way")
+                            (invalidate-action (test-case-definition) case :b)
+                            (and
+                              (not (case-has-committed-data? case :c))
+                              (case-has-committed-data? case :h)))))
+           (is (true? (as-> {} case
+                            (add-data-to-case case :c "far out")
+                            (add-data-to-case case :e "yoloswaggins")
+                            (add-data-to-case case :a "dope")
+                            (add-data-to-case case :h "fuego")
+                            (invalidate-action (test-case-definition) case :g)
+                            (printreturn case)
+                            (not-any? true? [(case-has-committed-data? case :c)
+                                             (case-has-committed-data? case :e)
+                                             (case-has-committed-data? case :a)
+                                             (case-has-committed-data? case :h)]))))
+           (is (true? (as-> {} case
+                            (add-data-to-case case :c "far out")
+                            (add-data-to-case case :e "yoloswaggins")
+                            (add-data-to-case case :a "dope")
+                            (add-data-to-case case :h "fuego")
+                            (invalidate-action (test-case-definition) case :d)
+                            (printreturn case)
+                            (and (not-any? false? [(case-has-committed-data? case :h)
+                                                   (case-has-committed-data? case :e)])
+                                 (not-any? true? [(case-has-committed-data? case :c)
+                                                  (case-has-committed-data? case :a)]))))))}
+  [process-definition case action]
+  (loop [loop-case case
+         [loop-action & loop-actions] [action]
+         seen-actions #{}]
+    (if (nil? loop-action)
+      loop-case
+      (recur (uncommit-datas-produced-by-action process-definition loop-case loop-action)
+             (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-actions) loop-actions)) seen-actions)
+             (union #{loop-action} seen-actions)))))
