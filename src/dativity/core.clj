@@ -226,33 +226,35 @@
   "Uncommits the data produced by the specified action, and then recursively performs
   the same procedure on all actions that require the data produced by the specified action."
   {:test (fn []
-           (is (true? (as-> {} case
-                            (add-data-to-case case :c "far out")
-                            (add-data-to-case case :h "no way")
-                            (invalidate-action (test-case-definition) case :b)
-                            (and
-                              (not (case-has-committed-data? case :c))
-                              (case-has-committed-data? case :h)))))
-           (is (true? (as-> {} case
-                            (add-data-to-case case :c "far out")
-                            (add-data-to-case case :e "yoloswaggins")
-                            (add-data-to-case case :a "dope")
-                            (add-data-to-case case :h "fuego")
-                            (invalidate-action (test-case-definition) case :g)
-                            (not-any? true? [(case-has-committed-data? case :c)
-                                             (case-has-committed-data? case :e)
-                                             (case-has-committed-data? case :a)
-                                             (case-has-committed-data? case :h)]))))
-           (is (true? (as-> {} case
-                            (add-data-to-case case :c "far out")
-                            (add-data-to-case case :e "yoloswaggins")
-                            (add-data-to-case case :a "dope")
-                            (add-data-to-case case :h "fuego")
-                            (invalidate-action (test-case-definition) case :d)
-                            (and (not-any? false? [(case-has-committed-data? case :h)
-                                                   (case-has-committed-data? case :e)])
-                                 (not-any? true? [(case-has-committed-data? case :c)
-                                                  (case-has-committed-data? case :a)]))))))}
+           (as-> {} case
+                 (add-data-to-case case :c "far out")
+                 (add-data-to-case case :h "no way")
+                 (invalidate-action (test-case-definition) case :b)
+                 (do
+                   (is (not (case-has-committed-data? case :c)))
+                   (is (case-has-committed-data? case :h))
+                   (is (not (action-allowed? (test-case-definition) case :b)))))
+           (as-> {} case
+                 (add-data-to-case case :c "far out")
+                 (add-data-to-case case :e "yoloswaggins")
+                 (add-data-to-case case :a "dope")
+                 (add-data-to-case case :h "fuego")
+                 (invalidate-action (test-case-definition) case :g)
+                 (do
+                   (is (false? (case-has-committed-data? case :c)))
+                   (is (false? (case-has-committed-data? case :e)))
+                   (is (false? (case-has-committed-data? case :a)))
+                   (is (false? (case-has-committed-data? case :h)))))
+           (as-> {} case
+                 (add-data-to-case case :c "far out")
+                 (add-data-to-case case :e "yoloswaggins")
+                 (add-data-to-case case :a "dope")
+                 (add-data-to-case case :h "fuego")
+                 (invalidate-action (test-case-definition) case :d)
+                 (is (not-any? false? [(case-has-committed-data? case :h)
+                                       (case-has-committed-data? case :e)]))
+                 (is (not-any? true? [(case-has-committed-data? case :c)
+                                      (case-has-committed-data? case :a)]))))}
   [process-definition case action]
   (loop [loop-case case
          [loop-action & loop-actions] [action]
