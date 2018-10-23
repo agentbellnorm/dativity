@@ -63,25 +63,35 @@
        (filter (fn [node] (= :action (uber/attr process-definition node :type))))
        (set)))
 
+(defn case-has-data?
+  {:test (fn []
+           (is (case-has-data? {:a {:committed true :value "hejhopp"}} :a))
+           (is (case-has-data? {:a {:committed false :value "hejhopp"}} :a))
+           (is (case-has-data? {:a {:committed false :value nil}} :a))
+           (is (not (case-has-data? {} :a)))
+           )}
+  [case data-key]
+  (not (nil? (data-key case))))
+
 (defn case-has-committed-data?
   {:test (fn []
            (is (case-has-committed-data? {:a {:committed true
-                                              :data      "hejhopp"}
+                                              :value     "hejhopp"}
                                           :b {:committed true
-                                              :data      "yoloswag"}}
+                                              :value     "yoloswag"}}
                                          :a))
            (is (case-has-committed-data? {:a {:committed true
-                                              :data      "hejhopp"}
+                                              :value     "hejhopp"}
                                           :b {:committed true
-                                              :data      "yoloswag"}}
+                                              :value     "yoloswag"}}
                                          :b))
            (is (false? (case-has-committed-data? {:a {:committed false
-                                                      :data      "hejhopp"}
+                                                      :value     "hejhopp"}
                                                   :b {:committed true
-                                                      :data      "yoloswag"}}
+                                                      :value     "yoloswag"}}
                                                  :a)))
            (is (false? (case-has-committed-data? {:b {:committed true
-                                                      :data      "yoloswag"}}
+                                                      :value     "yoloswag"}}
                                                  :a))))}
   [case data-key]
   (if (nil? (data-key case))

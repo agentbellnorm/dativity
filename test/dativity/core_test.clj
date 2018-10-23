@@ -179,16 +179,21 @@
             (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
           (c/invalidate-action case-graph case :add-loan-details) ; INVALIDATION!!
           (do
-            (is (false? (c/action-allowed? case-graph case :get-currently-owned-real-estate)))
-            (is (false? (c/action-allowed? case-graph case :fetch-supplimentary-info)))
-            (is (false? (c/action-allowed? case-graph case :know-your-customer)))
+            (is (not (c/action-allowed? case-graph case :get-currently-owned-real-estate)))
+            (is (not (c/action-allowed? case-graph case :fetch-supplimentary-info)))
+            (is (not (c/action-allowed? case-graph case :know-your-customer)))
             (is (= (c/next-actions case-graph case) #{:add-loan-details
                                                       :add-collateral
                                                       :consent-to-personal-data-retrieval-and-storage
                                                       :add-economy}))
             (is (= (c/actions-performed case-graph case) #{:create-case}))
             (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
-            (is (c/action-allowed? case-graph case :add-loan-details)))
-          case)
+            (is (c/action-allowed? case-graph case :add-loan-details))
+            (is (c/case-has-data? case :loan-details))
+            (is (c/case-has-data? case :collateral))
+            (is (c/case-has-data? case :consent))
+            (is (c/case-has-data? case :case-id))
+            (is (c/case-has-data? case :customer-id))
+            (printreturn case)
+            ))
     ))
-
