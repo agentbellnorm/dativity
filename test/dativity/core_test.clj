@@ -98,11 +98,16 @@
           (c/add-data-to-case case :case-id "100001")
           (c/add-data-to-case case :customer-id "9209041111")
           (do
-            (is (= (c/next-actions case-graph case) #{:add-loan-details :add-collateral :consent-to-personal-data-retrieval-and-storage :add-economy})) case)
+            (is (= (c/next-actions case-graph case) #{:add-loan-details
+                                                      :add-collateral
+                                                      :consent-to-personal-data-retrieval-and-storage
+                                                      :add-economy})) case)
           (c/add-data-to-case case :loan-details {:amount  "1000000"
                                                   :product "Bolån"})
           (do
-            (is (= (c/next-actions case-graph case) #{:add-collateral :consent-to-personal-data-retrieval-and-storage :add-economy}))
+            (is (= (c/next-actions case-graph case) #{:add-collateral
+                                                      :consent-to-personal-data-retrieval-and-storage
+                                                      :add-economy}))
             (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details}))
             (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
             (is (c/action-allowed? case-graph case :add-loan-details)) case)
@@ -133,8 +138,8 @@
 
 
 (deftest invalidate-it
-  (testing "runs a case through the whole flow and makes
-            sure that only the right actions are available"
+  (testing "Given a case that has a few actions performed, when an action is invalidated,
+            then the case should be 'rewinded' to that action that was invalidated. No data should be removed."
     (as-> {} case
           (do
             (is (= (c/next-actions case-graph case) #{:create-case}))
@@ -143,11 +148,16 @@
           (c/add-data-to-case case :case-id "100001")
           (c/add-data-to-case case :customer-id "9209041111")
           (do
-            (is (= (c/next-actions case-graph case) #{:add-loan-details :add-collateral :consent-to-personal-data-retrieval-and-storage :add-economy})) case)
+            (is (= (c/next-actions case-graph case) #{:add-loan-details
+                                                      :add-collateral
+                                                      :consent-to-personal-data-retrieval-and-storage
+                                                      :add-economy})) case)
           (c/add-data-to-case case :loan-details {:amount  "1000000"
                                                   :product "Bolån"})
           (do
-            (is (= (c/next-actions case-graph case) #{:add-collateral :consent-to-personal-data-retrieval-and-storage :add-economy}))
+            (is (= (c/next-actions case-graph case) #{:add-collateral
+                                                      :consent-to-personal-data-retrieval-and-storage
+                                                      :add-economy}))
             (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details}))
             (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
             (is (c/action-allowed? case-graph case :add-loan-details)) case)
@@ -172,10 +182,13 @@
             (is (false? (c/action-allowed? case-graph case :get-currently-owned-real-estate)))
             (is (false? (c/action-allowed? case-graph case :fetch-supplimentary-info)))
             (is (false? (c/action-allowed? case-graph case :know-your-customer)))
-            (is (= (c/next-actions case-graph case) #{:add-loan-details :add-collateral :consent-to-personal-data-retrieval-and-storage :add-economy}))
+            (is (= (c/next-actions case-graph case) #{:add-loan-details
+                                                      :add-collateral
+                                                      :consent-to-personal-data-retrieval-and-storage
+                                                      :add-economy}))
             (is (= (c/actions-performed case-graph case) #{:create-case}))
             (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
             (is (c/action-allowed? case-graph case :add-loan-details)))
           case)
-  ) )
+    ))
 

@@ -263,5 +263,5 @@
       loop-case
       (recur (uncommit-datas-produced-by-action process-definition loop-case loop-action)
              (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-actions) loop-actions)) seen-actions)
-             (union #{loop-action} seen-actions)))))
+             (conj seen-actions loop-action)))))
 
