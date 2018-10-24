@@ -64,6 +64,7 @@
        (set)))
 
 (defn case-has-data?
+  "Returns true if the given data node exists regardless if it is committed or not."
   {:test (fn []
            (is (case-has-data? {:a {:committed true :value "hejhopp"}} :a))
            (is (case-has-data? {:a {:committed false :value "hejhopp"}} :a))
@@ -74,6 +75,7 @@
   (not (nil? (data-key case))))
 
 (defn case-has-committed-data?
+  "Returns true if the given data node exists and is committed"
   {:test (fn []
            (is (case-has-committed-data? {:a {:committed true
                                               :value     "hejhopp"}
@@ -97,6 +99,18 @@
   (if (nil? (data-key case))
     false
     (:committed (data-key case))))
+
+(defn case-has-uncommitted-data?
+  "Returns true if the given data node exists on the case and is uncommitted"
+  {:test (fn []
+           (is (case-has-uncommitted-data? {:a {:committed false
+                                                :value     "dank"}} :a))
+           (is (not (case-has-uncommitted-data? {:a {:committed true
+                                                     :value     "yoloswaggins"}} :a)))
+           (is (not (case-has-uncommitted-data? {} :a)))
+           )}
+  [case data-key]
+  (and (case-has-data? case data-key) (not (case-has-committed-data? case data-key))))
 
 (defn data-prereqs-for-action
   {:test (fn []

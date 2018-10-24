@@ -38,7 +38,7 @@
       (d/add-entity-to-model (d/role :applicant))
       (d/add-entity-to-model (d/role :system))
       (d/add-entity-to-model (d/role :officer))
-      ;  Production edges
+      ; Production edges
       (d/add-relationship-to-model (d/action-produces :create-case :customer-id))
       (d/add-relationship-to-model (d/action-produces :create-case :case-id))
       (d/add-relationship-to-model (d/action-produces :consent-to-personal-data-retrieval-and-storage :consent))
@@ -137,63 +137,63 @@
     ))
 
 
-(deftest invalidate-it
-  (testing "Given a case that has a few actions performed, when an action is invalidated,
+  (deftest invalidate-it
+    (testing "Given a case that has a few actions performed, when an action is invalidated,
             then the case should be 'rewinded' to that action that was invalidated. No data should be removed."
-    (as-> {} case
-          (do
-            (is (= (c/next-actions case-graph case) #{:create-case}))
-            (is (= (c/next-actions case-graph case :applicant) #{:create-case}))
-            (is (= (c/next-actions case-graph case :system) #{})) case)
-          (c/add-data-to-case case :case-id "100001")
-          (c/add-data-to-case case :customer-id "9209041111")
-          (do
-            (is (= (c/next-actions case-graph case) #{:add-loan-details
-                                                      :add-collateral
-                                                      :consent-to-personal-data-retrieval-and-storage
-                                                      :add-economy})) case)
-          (c/add-data-to-case case :loan-details {:amount  "1000000"
-                                                  :product "Bolån"})
-          (do
-            (is (= (c/next-actions case-graph case) #{:add-collateral
-                                                      :consent-to-personal-data-retrieval-and-storage
-                                                      :add-economy}))
-            (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details}))
-            (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
-            (is (c/action-allowed? case-graph case :add-loan-details)) case)
-          (c/add-data-to-case case :collateral {:designation {:municipality "Täby"
-                                                              :region       "Pallen"
-                                                              :block        "11:45"}
-                                                :valuation   "5700000"})
-          (do
-            (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details :add-collateral}))
-            (is (not (c/action-allowed? case-graph case :add-collateral-link))) case)
-          (c/add-data-to-case case :consent {:uc  true
-                                             :lmv true
-                                             :pep true})
-          (do
-            (is (= (c/next-actions case-graph case) #{:fetch-supplimentary-info
-                                                      :get-currently-owned-real-estate
-                                                      :add-economy
-                                                      :know-your-customer}))
-            (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
-          (c/invalidate-action case-graph case :add-loan-details) ; INVALIDATION!!
-          (do
-            (is (not (c/action-allowed? case-graph case :get-currently-owned-real-estate)))
-            (is (not (c/action-allowed? case-graph case :fetch-supplimentary-info)))
-            (is (not (c/action-allowed? case-graph case :know-your-customer)))
-            (is (= (c/next-actions case-graph case) #{:add-loan-details
-                                                      :add-collateral
-                                                      :consent-to-personal-data-retrieval-and-storage
-                                                      :add-economy}))
-            (is (= (c/actions-performed case-graph case) #{:create-case}))
-            (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
-            (is (c/action-allowed? case-graph case :add-loan-details))
-            (is (c/case-has-data? case :loan-details))
-            (is (c/case-has-data? case :collateral))
-            (is (c/case-has-data? case :consent))
-            (is (c/case-has-data? case :case-id))
-            (is (c/case-has-data? case :customer-id))
-            (printreturn case)
-            ))
-    ))
+      (as-> {} case
+            (do
+              (is (= (c/next-actions case-graph case) #{:create-case}))
+              (is (= (c/next-actions case-graph case :applicant) #{:create-case}))
+              (is (= (c/next-actions case-graph case :system) #{})) case)
+            (c/add-data-to-case case :case-id "100001")
+            (c/add-data-to-case case :customer-id "9209041111")
+            (do
+              (is (= (c/next-actions case-graph case) #{:add-loan-details
+                                                        :add-collateral
+                                                        :consent-to-personal-data-retrieval-and-storage
+                                                        :add-economy})) case)
+            (c/add-data-to-case case :loan-details {:amount  "1000000"
+                                                    :product "Bolån"})
+            (do
+              (is (= (c/next-actions case-graph case) #{:add-collateral
+                                                        :consent-to-personal-data-retrieval-and-storage
+                                                        :add-economy}))
+              (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details}))
+              (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
+              (is (c/action-allowed? case-graph case :add-loan-details)) case)
+            (c/add-data-to-case case :collateral {:designation {:municipality "Täby"
+                                                                :region       "Pallen"
+                                                                :block        "11:45"}
+                                                  :valuation   "5700000"})
+            (do
+              (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details :add-collateral}))
+              (is (not (c/action-allowed? case-graph case :add-collateral-link))) case)
+            (c/add-data-to-case case :consent {:uc  true
+                                               :lmv true
+                                               :pep true})
+            (do
+              (is (= (c/next-actions case-graph case) #{:fetch-supplimentary-info
+                                                        :get-currently-owned-real-estate
+                                                        :add-economy
+                                                        :know-your-customer}))
+              (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
+            (c/invalidate-action case-graph case :add-loan-details) ; INVALIDATION!!
+            (do
+              (is (not (c/action-allowed? case-graph case :get-currently-owned-real-estate)))
+              (is (not (c/action-allowed? case-graph case :fetch-supplimentary-info)))
+              (is (not (c/action-allowed? case-graph case :know-your-customer)))
+              (is (= (c/next-actions case-graph case) #{:add-loan-details
+                                                        :add-collateral
+                                                        :consent-to-personal-data-retrieval-and-storage
+                                                        :add-economy}))
+              (is (= (c/actions-performed case-graph case) #{:create-case}))
+              (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
+              (is (c/action-allowed? case-graph case :add-loan-details))
+              (is (c/case-has-data? case :loan-details))
+              (is (c/case-has-data? case :collateral))
+              (is (c/case-has-data? case :consent))
+              (is (c/case-has-data? case :case-id))
+              (is (c/case-has-data? case :customer-id))
+              (printreturn case)
+              ))
+      ))
