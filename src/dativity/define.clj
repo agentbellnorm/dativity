@@ -42,7 +42,11 @@
 (defn generate-graph-image!
   [graph name-with-path]
   (uber/viz-graph graph {:layout :fdp
-                         :save   {:filename name-with-path :format :png}}))
+                         :save   {:filename name-with-path :format :svgz}}))
+
+(defn show-graph-image!
+  [graph]
+  (uber/viz-graph graph))
 
 
 (defn add-entity-to-model

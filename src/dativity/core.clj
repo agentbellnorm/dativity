@@ -32,7 +32,7 @@
 
 (comment (uber/viz-graph (test-case-definition)))
 
-(defn add-data-to-case
+(defn add-data-to-case                                      ;; TODO: Should subsequent actions be invalidated if the data was already there?
   {:test (fn []
            (is (= (add-data-to-case {} :case-id 3)
                   {:case-id {:committed true :value 3}}))
@@ -224,9 +224,12 @@
            (is (true? (-> (add-data-to-case {} :a "swell")
                           (add-data-to-case :b "turnt")
                           (uncommit-data :a)
-                          (case-has-committed-data? :b)))))}
+                          (case-has-committed-data? :b))))
+           (is (= (uncommit-data {} :a ) {})))}
   [case key]
-  (update-in case [key] assoc :committed false))
+  (if (contains? case key)
+    (update-in case [key] assoc :committed false)
+    case))
 
 (defn- uncommit-datas-produced-by-action
   "uncommits all data nodes that have a production edge from the specified action node"
