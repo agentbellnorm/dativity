@@ -33,6 +33,14 @@
                 :color       :red
                 :label       "requires"}])
 
+(defn action-requires-conditional
+  [node prereq predicate data-parameter]
+  [node prereq {:association :requires-conditional
+                :color       :purple
+                :label       "requires"
+                :condition   predicate
+                :data-param data-parameter}])
+
 (defn role-performs
   [role action]
   [role action {:association :performs
@@ -67,7 +75,7 @@
                            (add-relationship-to-model (action-produces :thing-to-do :thing-to-know)))]
              (is (= 1 (uber/count-edges graph)))
              (is (= 2 (uber/count-nodes graph)))))}
-   [case relationship]
+  [case relationship]
   (uber/add-directed-edges case relationship))
 
 

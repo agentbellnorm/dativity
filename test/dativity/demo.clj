@@ -33,6 +33,7 @@
       (d/add-entity-to-model (d/action :produce-credit-application-document))
       (d/add-entity-to-model (d/action :sign-credit-application-document))
       (d/add-entity-to-model (d/action :sign-credit-application-document))
+      (d/add-entity-to-model (d/action :counter-sign-application))
       (d/add-entity-to-model (d/action :payout-loan))
       ; Data entities
       (d/add-entity-to-model (d/data :case-id))
@@ -42,6 +43,7 @@
       (d/add-entity-to-model (d/data :applicant-credit-application-document-signature))
       (d/add-entity-to-model (d/data :officer-credit-application-document-signature))
       (d/add-entity-to-model (d/data :loan-number))
+      (d/add-entity-to-model (d/data :counter-signature))
       ; Roles
       (d/add-entity-to-model (d/role :applicant))
       (d/add-entity-to-model (d/role :system))
@@ -54,6 +56,7 @@
       (d/add-relationship-to-model (d/action-produces :sign-credit-application-document :applicant-credit-application-document-signature))
       (d/add-relationship-to-model (d/action-produces :sign-credit-application-document :officer-credit-application-document-signature))
       (d/add-relationship-to-model (d/action-produces :payout-loan :loan-number))
+      (d/add-relationship-to-model (d/action-produces :counter-sign-application :counter-signature))
       ; Prerequisite edges
       (d/add-relationship-to-model (d/action-requires :enter-loan-details :case-id))
       (d/add-relationship-to-model (d/action-requires :produce-credit-application-document :loan-details))
@@ -61,11 +64,14 @@
       (d/add-relationship-to-model (d/action-requires :sign-credit-application-document :credit-application-document))
       (d/add-relationship-to-model (d/action-requires :payout-loan :applicant-credit-application-document-signature))
       (d/add-relationship-to-model (d/action-requires :payout-loan :officer-credit-application-document-signature))
+      (d/add-relationship-to-model (d/action-requires-conditional :payout-loan :counter-signature (fn [loan-info]
+                                                                                                    (= 1 1)) :loan-details))
       ; Role-action edges
       (d/add-relationship-to-model (d/role-performs :applicant :create-case))
       (d/add-relationship-to-model (d/role-performs :applicant :enter-loan-details))
       (d/add-relationship-to-model (d/role-performs :applicant :sign-credit-application-document))
       (d/add-relationship-to-model (d/role-performs :officer :sign-credit-application-document))
+      (d/add-relationship-to-model (d/role-performs :officer :counter-sign-application))
       (d/add-relationship-to-model (d/role-performs :system :payout-loan))
       (d/add-relationship-to-model (d/role-performs :system :produce-credit-application-document))))
 

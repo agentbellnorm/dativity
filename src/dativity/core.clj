@@ -14,6 +14,8 @@
       (define/add-entity-to-model (define/action :d))
       (define/add-entity-to-model (define/action :f))
       (define/add-entity-to-model (define/action :g))
+      (define/add-entity-to-model (define/action :i))
+      (define/add-entity-to-model (define/data :j))
       (define/add-entity-to-model (define/role :b))         ; doesn't make sense but needs to be some kind of entity
       (define/add-entity-to-model (define/role :c))
       (define/add-entity-to-model (define/role :e))
@@ -22,6 +24,8 @@
       (define/add-relationship-to-model (define/action-requires :a :e))
       (define/add-relationship-to-model (define/action-requires :b :e))
       (define/add-relationship-to-model (define/action-requires :d :e))
+      (define/add-relationship-to-model (define/action-requires :i :b))
+      (define/add-relationship-to-model (define/action-requires-conditional :i :j (fn [b-data] (= (:elite b-data) 1337)) :b))
       (define/add-relationship-to-model (define/action-produces :b :c))
       (define/add-relationship-to-model (define/action-produces :d :a))
       (define/add-relationship-to-model (define/action-produces :f :c))
@@ -57,7 +61,7 @@
 
 (defn all-actions
   {:test (fn []
-           (is (= (all-actions (test-case-definition)) #{:a :d :f :g})))}
+           (is (= (all-actions (test-case-definition)) #{:a :d :f :g :i})))}
   [process-definition]
   (->> (uber/nodes process-definition)
        (filter (fn [node] (= :action (uber/attr process-definition node :type))))
@@ -114,13 +118,17 @@
 
 (defn data-prereqs-for-action
   {:test (fn []
-           (is (= (data-prereqs-for-action (test-case-definition) :a) #{:b :e}))
-           (is (= (data-prereqs-for-action (test-case-definition) :b) #{:e}))
-           (is (= (data-prereqs-for-action (test-case-definition) :b) #{:e}))
-           (is (= (data-prereqs-for-action (test-case-definition) :c) #{})))}
-  [process-definition action]
+           (is (= (data-prereqs-for-action {} (test-case-definition) :a) #{:b :e}))
+           (is (= (data-prereqs-for-action {} (test-case-definition) :b) #{:e}))
+           (is (= (data-prereqs-for-action {} (test-case-definition) :b) #{:e}))
+           (is (= (data-prereqs-for-action {} (test-case-definition) :c) #{}))
+           (is (= (data-prereqs-for-action {} (test-case-definition) :i) #{}))
+           (is (data-prereqs-for-action (add-data-to-case {} :))))} ;; TODO : fortsätt här, den ska kontrollera vilkor baserat på datan och filtrera prereqs efter det.
+  [process-definition case action]
   (->> (uber/find-edges process-definition {:src         action
                                             :association :requires})
+       (concat (uber/find-edges process-definition {:src         action
+                                                    :association :requires-conditional}))
        (map (fn [edge] (:dest edge)))
        (set)))
 
@@ -159,6 +167,21 @@
   (apply union (map (fn [data] (actions-that-require-data process-definition data))
                     (data-produced-by-action process-definition action))))
 
+(defn uncommit-data
+  {:test (fn []
+           (is (false? (-> (add-data-to-case {} :a "swell")
+                           (uncommit-data :a)
+                           (case-has-committed-data? :a))))
+           (is (true? (-> (add-data-to-case {} :a "swell")
+                          (add-data-to-case :b "turnt")
+                          (uncommit-data :a)
+                          (case-has-committed-data? :b))))
+           (is (= (uncommit-data {} :a) {})))}
+  [case key]
+  (if (contains? case key)
+    (update-in case [key] assoc :committed false)
+    case))
+
 (defn actions-with-prereqs-present
   {:test (fn []
            (is (= (actions-with-prereqs-present (test-case-definition) {}) #{:f :g}))
@@ -167,7 +190,27 @@
            (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
                                                                            (add-data-to-case :e "yeah")
                                                                            (add-data-to-case :b "no")))
-                  #{:a :d :f :g})))}
+                  #{:a :d :f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :e "total")) #{:d :f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
+                                                                           (add-data-to-case :e "total")
+                                                                           (uncommit-data :e)))
+                  #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
+                                                                           (add-data-to-case :b {:elite 1337})
+                                                                           (add-data-to-case :j "radical")))
+                  #{:i :f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
+                                                                           (add-data-to-case :b {:elite 1337})
+                                                                           (add-data-to-case :j "radical")
+                                                                           (uncommit-data :j)))
+                  #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
+                                                                           (add-data-to-case :b {:elite 1337})))
+                  #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
+                                                                           (add-data-to-case :b {:elite 1336})))
+                  #{:i :f :g})))}
   [process-definition case]
   (->> (all-actions process-definition)
        (reduce (fn [acc action]
@@ -215,21 +258,6 @@
                                                                    (add-data-to-case :c "yeah")) :d))))}
   [process-definition case action]
   (contains? (actions-with-prereqs-present process-definition case) action))
-
-(defn- uncommit-data
-  {:test (fn []
-           (is (false? (-> (add-data-to-case {} :a "swell")
-                           (uncommit-data :a)
-                           (case-has-committed-data? :a))))
-           (is (true? (-> (add-data-to-case {} :a "swell")
-                          (add-data-to-case :b "turnt")
-                          (uncommit-data :a)
-                          (case-has-committed-data? :b))))
-           (is (= (uncommit-data {} :a ) {})))}
-  [case key]
-  (if (contains? case key)
-    (update-in case [key] assoc :committed false)
-    case))
 
 (defn- uncommit-datas-produced-by-action
   "uncommits all data nodes that have a production edge from the specified action node"
