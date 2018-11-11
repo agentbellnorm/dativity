@@ -22,24 +22,25 @@
          :color :orange}])
 
 (defn action-produces
-  [node creates]
-  [node creates {:association :produces
+  [action creates]
+  [action creates {:association :produces
                  :color       :green
                  :label       "produces"}])
 
 (defn action-requires
-  [node prereq]
-  [node prereq {:association :requires
+  [action prereq]
+  [action prereq {:association :requires
                 :color       :red
                 :label       "requires"}])
 
 (defn action-requires-conditional
-  [node prereq predicate data-parameter]
-  [node prereq {:association :requires-conditional
+  "condition fn does can assume that the data exists"
+  [action prereq predicate data-parameter]
+  [action prereq {:association :requires-conditional
                 :color       :purple
-                :label       "requires"
+                :label       "requires?"
                 :condition   predicate
-                :data-param data-parameter}])
+                :data-parameter data-parameter}])
 
 (defn role-performs
   [role action]

@@ -4,7 +4,15 @@
             [clojure.test :refer :all]
             [clojure.set :refer :all]))
 
+(in-ns 'dativity.core)
+
 (defn printreturn [x] (println x) x)
+
+(defn get-data-from-case
+  {:test (fn []
+           (is (= (get-data-from-case {:a {:committed true :value "so-true"}} :a) "so-true")))}
+  [case key]
+  (:value (key case)))
 
 (defn test-case-definition
   "test graph for unit testing purposes, does not make sense really, but is simple."
@@ -25,7 +33,7 @@
       (define/add-relationship-to-model (define/action-requires :b :e))
       (define/add-relationship-to-model (define/action-requires :d :e))
       (define/add-relationship-to-model (define/action-requires :i :b))
-      (define/add-relationship-to-model (define/action-requires-conditional :i :j (fn [b-data] (= (:elite b-data) 1337)) :b))
+      (define/add-relationship-to-model (define/action-requires-conditional :i :j (fn [b-data] (> (:power-level b-data) 9000)) :b))
       (define/add-relationship-to-model (define/action-produces :b :c))
       (define/add-relationship-to-model (define/action-produces :d :a))
       (define/add-relationship-to-model (define/action-produces :f :c))
@@ -58,6 +66,7 @@
   [case key value]
   (assoc case key {:committed true
                    :value     value}))
+
 
 (defn all-actions
   {:test (fn []
@@ -116,21 +125,52 @@
   [case data-key]
   (and (case-has-data? case data-key) (not (case-has-committed-data? case data-key))))
 
-(defn data-prereqs-for-action
+(defn- get-conditionally-required-data-nodes-for-action
   {:test (fn []
-           (is (= (data-prereqs-for-action {} (test-case-definition) :a) #{:b :e}))
-           (is (= (data-prereqs-for-action {} (test-case-definition) :b) #{:e}))
-           (is (= (data-prereqs-for-action {} (test-case-definition) :b) #{:e}))
-           (is (= (data-prereqs-for-action {} (test-case-definition) :c) #{}))
-           (is (= (data-prereqs-for-action {} (test-case-definition) :i) #{}))
-           (is (data-prereqs-for-action (add-data-to-case {} :))))} ;; TODO : fortsätt här, den ska kontrollera vilkor baserat på datan och filtrera prereqs efter det.
+           (is (= (get-conditionally-required-data-nodes-for-action (test-case-definition) {} :a) #{}))
+           (is (= (get-conditionally-required-data-nodes-for-action
+                    (test-case-definition)
+                    (add-data-to-case {} :b {:power-level 9001})
+                    :i)
+                  #{:j}))
+           (is (= (get-conditionally-required-data-nodes-for-action
+                    (test-case-definition)
+                    (add-data-to-case {} :b {:power-level 8999})
+                    :i)
+                  #{}))
+           (is (= (get-conditionally-required-data-nodes-for-action (test-case-definition) {} :i) #{})))}
+  [process-definition case action]
+  (->> (uber/find-edges process-definition {:src         action
+                                            :association :requires-conditional})
+       (filter (fn [conditional-requirement]
+                      (let [src (:src conditional-requirement)
+                            dest (:dest conditional-requirement)
+                            condition (uber/attr process-definition [src dest] :condition)
+                            parameter (uber/attr process-definition [src dest] :data-parameter)]
+                        (if (not (nil? (get-data-from-case case parameter)))
+                          (condition (get-data-from-case case parameter))
+                          false))
+                 ))
+       (map (fn [edge] (:dest edge)))
+       (set)))
+
+(defn data-prereqs-for-action                               ;; depends on case to determine conditional requirements
+  "returns data nodes that are required by action nodes. Conditional requirements are included
+  if and only if the conditions are true."
+  {:test (fn []
+           (is (= (data-prereqs-for-action (test-case-definition) {} :a) #{:b :e}))
+           (is (= (data-prereqs-for-action (test-case-definition) {} :b) #{:e}))
+           (is (= (data-prereqs-for-action (test-case-definition) {} :b) #{:e}))
+           (is (= (data-prereqs-for-action (test-case-definition) {} :c) #{}))
+           (is (= (data-prereqs-for-action (test-case-definition) {} :i) #{:b}))
+           (is (= (data-prereqs-for-action (test-case-definition) (add-data-to-case {} :b {:power-level 9001}) :i) #{:j :b}))
+           (is (= (data-prereqs-for-action (test-case-definition) (add-data-to-case {} :b {:power-level 8999}) :i) #{:b})))}
   [process-definition case action]
   (->> (uber/find-edges process-definition {:src         action
                                             :association :requires})
-       (concat (uber/find-edges process-definition {:src         action
-                                                    :association :requires-conditional}))
        (map (fn [edge] (:dest edge)))
-       (set)))
+       (set)
+       (union (get-conditionally-required-data-nodes-for-action process-definition case action))))
 
 (defn data-produced-by-action
   {:test (fn []
@@ -153,7 +193,7 @@
 (defn actions-that-require-data
   {:test (fn []
            (is (= (actions-that-require-data (test-case-definition) :e) #{:b :d :a}))
-           (is (= (actions-that-require-data (test-case-definition) :b) #{:a})))}
+           (is (= (actions-that-require-data (test-case-definition) :b) #{:a :i})))}
   [process-definition data]
   (->> (uber/find-edges process-definition {:dest        data
                                             :association :requires})
@@ -186,10 +226,10 @@
   {:test (fn []
            (is (= (actions-with-prereqs-present (test-case-definition) {}) #{:f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :e "yeah")) #{:d :f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :b "no")) #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :b {:power-level 9001})) #{:f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
                                                                            (add-data-to-case :e "yeah")
-                                                                           (add-data-to-case :b "no")))
+                                                                           (add-data-to-case :b {:power-level 9001})))
                   #{:a :d :f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :e "total")) #{:d :f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
@@ -197,24 +237,24 @@
                                                                            (uncommit-data :e)))
                   #{:f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:elite 1337})
+                                                                           (add-data-to-case :b {:power-level 9001})
                                                                            (add-data-to-case :j "radical")))
                   #{:i :f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:elite 1337})
+                                                                           (add-data-to-case :b {:power-level 9001})
                                                                            (add-data-to-case :j "radical")
                                                                            (uncommit-data :j)))
                   #{:f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:elite 1337})))
+                                                                           (add-data-to-case :b {:power-level 9001})))
                   #{:f :g}))
            (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:elite 1336})))
+                                                                           (add-data-to-case :b {:power-level 8900})))
                   #{:i :f :g})))}
   [process-definition case]
   (->> (all-actions process-definition)
        (reduce (fn [acc action]
-                 (let [prereqs (data-prereqs-for-action process-definition action)]
+                 (let [prereqs (data-prereqs-for-action process-definition case action)]
                    (if (every? true? (map (fn [prereq] (case-has-committed-data? case prereq)) prereqs))
                      (conj acc action)
                      acc)))
@@ -248,13 +288,13 @@
            (is (false? (action-allowed? (test-case-definition) {} :a)))
            (is (false? (action-allowed? (test-case-definition) {:e "yeah"} :a)))
            (is (true? (action-allowed? (test-case-definition) (-> {}
-                                                                  (add-data-to-case :b "no")
+                                                                  (add-data-to-case :b {:power-level 9001})
                                                                   (add-data-to-case :e "yeah")) :a)))
            (is (true? (action-allowed? (test-case-definition) (add-data-to-case {} :e "yeah") :d)))
            (is (false? (action-allowed? (test-case-definition) (add-data-to-case {} :c "yeah") :d)))
            (is (false? (action-allowed? (test-case-definition) (-> {}
                                                                    (add-data-to-case :a "lol")
-                                                                   (add-data-to-case :b "yolo")
+                                                                   (add-data-to-case :b {:power-level 9001})
                                                                    (add-data-to-case :c "yeah")) :d))))}
   [process-definition case action]
   (contains? (actions-with-prereqs-present process-definition case) action))
