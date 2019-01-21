@@ -312,7 +312,7 @@
   [process-definition case action]
   (loop [loop-case case
          [data & datas] (data-produced-by-action process-definition action)]
-    (if (nil? data)
+    (if-not data
       loop-case
       (recur (uncommit-data loop-case data)
              datas))))

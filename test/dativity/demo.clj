@@ -32,7 +32,6 @@
       (d/add-entity-to-model (d/action :enter-loan-details))
       (d/add-entity-to-model (d/action :produce-credit-application-document))
       (d/add-entity-to-model (d/action :sign-credit-application-document))
-      (d/add-entity-to-model (d/action :sign-credit-application-document))
       (d/add-entity-to-model (d/action :payout-loan))
       ; Data entities
       (d/add-entity-to-model (d/data :case-id))
