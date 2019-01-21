@@ -1,6 +1,6 @@
 (ns dativity.core
   (:require [dativity.define :as define]
-            [ubergraph.core :as uber]
+            [dativity.graph-functions :as graph]
             [clojure.test :refer :all]
             [clojure.set :refer :all]))
 
@@ -42,7 +42,7 @@
       (define/add-relationship-to-model (define/role-performs :a :c))
       (define/add-relationship-to-model (define/role-performs :c :d))))
 
-(comment (uber/viz-graph (test-case-definition)))
+(comment (graph/show-image (test-case-definition)))
 
 (defn add-data-to-case                                      ;; TODO: Should subsequent actions be invalidated if the data was already there?
   {:test (fn []
@@ -72,8 +72,8 @@
   {:test (fn []
            (is (= (all-actions (test-case-definition)) #{:a :d :f :g :i})))}
   [process-definition]
-  (->> (uber/nodes process-definition)
-       (filter (fn [node] (= :action (uber/attr process-definition node :type))))
+  (->> (graph/nodes process-definition)
+       (filter (fn [node] (= :action (graph/attr process-definition node :type))))
        (set)))
 
 (defn case-has-data?
@@ -140,13 +140,13 @@
                   #{}))
            (is (= (get-conditionally-required-data-nodes-for-action (test-case-definition) {} :i) #{})))}
   [process-definition case action]
-  (->> (uber/find-edges process-definition {:src         action
+  (->> (graph/find-edges process-definition {:src         action
                                             :association :requires-conditional})
        (filter (fn [conditional-requirement]
                       (let [src (:src conditional-requirement)
                             dest (:dest conditional-requirement)
-                            condition (uber/attr process-definition [src dest] :condition)
-                            parameter (uber/attr process-definition [src dest] :data-parameter)]
+                            condition (graph/attr process-definition [src dest] :condition)
+                            parameter (graph/attr process-definition [src dest] :data-parameter)]
                         (if (not (nil? (get-data-from-case case parameter)))
                           (condition (get-data-from-case case parameter))
                           false))
@@ -166,7 +166,7 @@
            (is (= (data-prereqs-for-action (test-case-definition) (add-data-to-case {} :b {:power-level 9001}) :i) #{:j :b}))
            (is (= (data-prereqs-for-action (test-case-definition) (add-data-to-case {} :b {:power-level 8999}) :i) #{:b})))}
   [process-definition case action]
-  (->> (uber/find-edges process-definition {:src         action
+  (->> (graph/find-edges process-definition {:src         action
                                             :association :requires})
        (map (fn [edge] (:dest edge)))
        (set)
@@ -178,14 +178,14 @@
            (is (= (data-produced-by-action (test-case-definition) :b) #{:c}))
            (is (= (data-produced-by-action (test-case-definition) :a) #{})))}
   [process-definition action]
-  (->> (uber/find-edges process-definition {:src         action
+  (->> (graph/find-edges process-definition {:src         action
                                             :association :produces})
        (map (fn [edge] (:dest edge)))
        (set)))
 
 (defn actions-performed-by-role
   [process-definition role]
-  (->> (uber/find-edges process-definition {:src         role
+  (->> (graph/find-edges process-definition {:src         role
                                             :association :performs})
        (map (fn [edge] (:dest edge)))
        (set)))
@@ -195,7 +195,7 @@
            (is (= (actions-that-require-data (test-case-definition) :e) #{:b :d :a}))
            (is (= (actions-that-require-data (test-case-definition) :b) #{:a :i})))}
   [process-definition data]
-  (->> (uber/find-edges process-definition {:dest        data
+  (->> (graph/find-edges process-definition {:dest        data
                                             :association :requires})
        (map (fn [edge] (:src edge)))
        (set)))

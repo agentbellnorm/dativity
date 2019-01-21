@@ -1,10 +1,10 @@
 (ns dativity.define
-  (:require [ubergraph.core :as uber]
+  (:require [dativity.graph-functions :as graph]
             [clojure.test :refer :all]))
 
 (defn empty-case-model
   []
-  (uber/multigraph))
+  (graph/empty-graph))
 
 (defn action
   [name]
@@ -48,14 +48,9 @@
                 :color       :orange
                 :label       "does"}])
 
-(defn generate-graph-image!
-  [graph name-with-path]
-  (uber/viz-graph graph {:layout :fdp
-                         :save   {:filename name-with-path :format :svgz}}))
-
 (defn show-graph-image!
   [graph]
-  (uber/viz-graph graph))
+  (graph/show-image graph))
 
 
 (defn add-entity-to-model
@@ -64,9 +59,9 @@
                   (-> (empty-case-model)
                       (add-entity-to-model (action :add-customer-information))
                       (add-entity-to-model (action :add-phone-number))
-                      (uber/count-nodes)))))}
+                      (graph/count-nodes)))))}
   [case node]
-  (uber/add-nodes-with-attrs case node))
+  (graph/add-node-with-attrs case node))
 
 (defn add-relationship-to-model
   {:test (fn []
@@ -74,12 +69,11 @@
                            (add-entity-to-model (action :thing-to-do))
                            (add-entity-to-model (data :thing-to-know))
                            (add-relationship-to-model (action-produces :thing-to-do :thing-to-know)))]
-             (is (= 1 (uber/count-edges graph)))
-             (is (= 2 (uber/count-nodes graph)))))}
+             (is (= 1 (graph/count-edges graph)))
+             (is (= 2 (graph/count-nodes graph)))))}
   [case relationship]
-  (uber/add-directed-edges case relationship))
+  (graph/add-directed-edge case relationship))
 
 
-(comment (uber/pprint case-graph))
-(comment (uber/ubergraph->edn case-graph))
+(comment (graph/pprint case-graph))
 
