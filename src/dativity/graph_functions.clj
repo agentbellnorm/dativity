@@ -20,8 +20,7 @@
            (is (= "yellow" (-> (empty-graph)
                                (add-node-with-attrs [:node {:color "green"}])
                                (add-node-with-attrs [:node2 {:color "blue"}])
-                               (add-directed-edge [:node :node2 {:color "yellow"}])
-                               (attr :node :node2 :color)))))}
+                               (add-directed-edge [:node :node2 {:color "yellow"}])))))}
   [graph edge]
   (uber/add-directed-edges graph edge))
 

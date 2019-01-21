@@ -94,8 +94,6 @@
       (d/add-relationship-to-model (d/role-performs :system :calculate-amortization))
       (d/add-relationship-to-model (d/role-performs :applicant :sign-credit-application-document))))
 
-(d/generate-graph-image! case-graph "resources/case-graph.png")
-
 (deftest actions-it
   (testing "runs a case through the whole flow and makes
             sure that only the right actions are available"
