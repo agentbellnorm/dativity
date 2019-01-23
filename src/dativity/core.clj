@@ -1,6 +1,6 @@
 (ns dativity.core
   (:require [dativity.define :as define]
-            [dativity.graph-functions :as graph]
+            [dativity.graph :as graph]
             [clojure.test :refer :all]
             [clojure.set :refer :all]))
 
@@ -14,7 +14,7 @@
   [case key]
   (:value (key case)))
 
-(defn test-case-definition
+(defn test-process
   "test graph for unit testing purposes, does not make sense really, but is simple."
   []
   (-> (define/empty-case-model)
@@ -42,22 +42,22 @@
       (define/add-relationship-to-model (define/role-performs :a :c))
       (define/add-relationship-to-model (define/role-performs :c :d))))
 
-(comment (graph/show-image (test-case-definition)))
+(comment (dativity.visualize/generate-png (test-process)))
 
-(defn add-data-to-case                                      ;; TODO: Should subsequent actions be invalidated if the data was already there?
+(defn add-data                                              ;; TODO: Should subsequent actions be invalidated if the data was already there?
   {:test (fn []
-           (is (= (add-data-to-case {} :case-id 3)
+           (is (= (add-data {} :case-id 3)
                   {:case-id {:committed true :value 3}}))
-           (is (= (add-data-to-case {:case-id     {:value 3 :committed true}
-                                     :customer-id {:committed true :value "920904"}}
-                                    :loan-number "90291234567")
+           (is (= (add-data {:case-id     {:value 3 :committed true}
+                             :customer-id {:committed true :value "920904"}}
+                            :loan-number "90291234567")
                   {:case-id     {:committed true :value 3}
                    :customer-id {:committed true :value "920904"}
                    :loan-number {:committed true :value "90291234567"}}))
-           (is (= (add-data-to-case {:case-id     {:committed true :value 3}
-                                     :customer-id {:committed true :value "920904"}
-                                     :loan-number {:committed true :value "90291234567"}}
-                                    :loan-details {:amount "1000000" :product "Bolån"})
+           (is (= (add-data {:case-id     {:committed true :value 3}
+                             :customer-id {:committed true :value "920904"}
+                             :loan-number {:committed true :value "90291234567"}}
+                            :loan-details {:amount "1000000" :product "Bolån"})
                   {:case-id      {:committed true :value 3}
                    :customer-id  {:committed true :value "920904"}
                    :loan-number  {:committed true :value "90291234567"}
@@ -70,7 +70,7 @@
 
 (defn all-actions
   {:test (fn []
-           (is (= (all-actions (test-case-definition)) #{:a :d :f :g :i})))}
+           (is (= (all-actions (test-process)) #{:a :d :f :g :i})))}
   [process-definition]
   (->> (graph/nodes process-definition)
        (filter (fn [node] (= :action (graph/attr process-definition node :type))))
@@ -87,27 +87,27 @@
   [case data-key]
   (not (nil? (data-key case))))
 
-(defn case-has-committed-data?
+(defn has-committed-data?
   "Returns true if the given data node exists and is committed"
   {:test (fn []
-           (is (case-has-committed-data? {:a {:committed true
-                                              :value     "hejhopp"}
-                                          :b {:committed true
-                                              :value     "yoloswag"}}
-                                         :a))
-           (is (case-has-committed-data? {:a {:committed true
-                                              :value     "hejhopp"}
-                                          :b {:committed true
-                                              :value     "yoloswag"}}
-                                         :b))
-           (is (false? (case-has-committed-data? {:a {:committed false
-                                                      :value     "hejhopp"}
-                                                  :b {:committed true
-                                                      :value     "yoloswag"}}
-                                                 :a)))
-           (is (false? (case-has-committed-data? {:b {:committed true
-                                                      :value     "yoloswag"}}
-                                                 :a))))}
+           (is (has-committed-data? {:a {:committed true
+                                         :value     "hejhopp"}
+                                     :b {:committed true
+                                         :value     "yoloswag"}}
+                                    :a))
+           (is (has-committed-data? {:a {:committed true
+                                         :value     "hejhopp"}
+                                     :b {:committed true
+                                         :value     "yoloswag"}}
+                                    :b))
+           (is (false? (has-committed-data? {:a {:committed false
+                                                 :value     "hejhopp"}
+                                             :b {:committed true
+                                                 :value     "yoloswag"}}
+                                            :a)))
+           (is (false? (has-committed-data? {:b {:committed true
+                                                 :value     "yoloswag"}}
+                                            :a))))}
   [case data-key]
   (if (nil? (data-key case))
     false
@@ -123,33 +123,33 @@
            (is (not (case-has-uncommitted-data? {} :a)))
            )}
   [case data-key]
-  (and (case-has-data? case data-key) (not (case-has-committed-data? case data-key))))
+  (and (case-has-data? case data-key) (not (has-committed-data? case data-key))))
 
 (defn- get-conditionally-required-data-nodes-for-action
   {:test (fn []
-           (is (= (get-conditionally-required-data-nodes-for-action (test-case-definition) {} :a) #{}))
+           (is (= (get-conditionally-required-data-nodes-for-action (test-process) {} :a) #{}))
            (is (= (get-conditionally-required-data-nodes-for-action
-                    (test-case-definition)
-                    (add-data-to-case {} :b {:power-level 9001})
+                    (test-process)
+                    (add-data {} :b {:power-level 9001})
                     :i)
                   #{:j}))
            (is (= (get-conditionally-required-data-nodes-for-action
-                    (test-case-definition)
-                    (add-data-to-case {} :b {:power-level 8999})
+                    (test-process)
+                    (add-data {} :b {:power-level 8999})
                     :i)
                   #{}))
-           (is (= (get-conditionally-required-data-nodes-for-action (test-case-definition) {} :i) #{})))}
+           (is (= (get-conditionally-required-data-nodes-for-action (test-process) {} :i) #{})))}
   [process-definition case action]
   (->> (graph/find-edges process-definition {:src         action
-                                            :association :requires-conditional})
+                                             :association :requires-conditional})
        (filter (fn [conditional-requirement]
-                      (let [src (:src conditional-requirement)
-                            dest (:dest conditional-requirement)
-                            condition (graph/attr process-definition [src dest] :condition)
-                            parameter (graph/attr process-definition [src dest] :data-parameter)]
-                        (if (not (nil? (get-data-from-case case parameter)))
-                          (condition (get-data-from-case case parameter))
-                          false))
+                 (let [src (:src conditional-requirement)
+                       dest (:dest conditional-requirement)
+                       condition (graph/attr process-definition src dest :condition)
+                       parameter (graph/attr process-definition src dest :data-parameter)]
+                   (if (not (nil? (get-data-from-case case parameter)))
+                     (condition (get-data-from-case case parameter))
+                     false))
                  ))
        (map (fn [edge] (:dest edge)))
        (set)))
@@ -158,64 +158,64 @@
   "returns data nodes that are required by action nodes. Conditional requirements are included
   if and only if the conditions are true."
   {:test (fn []
-           (is (= (data-prereqs-for-action (test-case-definition) {} :a) #{:b :e}))
-           (is (= (data-prereqs-for-action (test-case-definition) {} :b) #{:e}))
-           (is (= (data-prereqs-for-action (test-case-definition) {} :b) #{:e}))
-           (is (= (data-prereqs-for-action (test-case-definition) {} :c) #{}))
-           (is (= (data-prereqs-for-action (test-case-definition) {} :i) #{:b}))
-           (is (= (data-prereqs-for-action (test-case-definition) (add-data-to-case {} :b {:power-level 9001}) :i) #{:j :b}))
-           (is (= (data-prereqs-for-action (test-case-definition) (add-data-to-case {} :b {:power-level 8999}) :i) #{:b})))}
+           (is (= (data-prereqs-for-action (test-process) {} :a) #{:b :e}))
+           (is (= (data-prereqs-for-action (test-process) {} :b) #{:e}))
+           (is (= (data-prereqs-for-action (test-process) {} :b) #{:e}))
+           (is (= (data-prereqs-for-action (test-process) {} :c) #{}))
+           (is (= (data-prereqs-for-action (test-process) {} :i) #{:b}))
+           (is (= (data-prereqs-for-action (test-process) (add-data {} :b {:power-level 9001}) :i) #{:j :b}))
+           (is (= (data-prereqs-for-action (test-process) (add-data {} :b {:power-level 8999}) :i) #{:b})))}
   [process-definition case action]
   (->> (graph/find-edges process-definition {:src         action
-                                            :association :requires})
+                                             :association :requires})
        (map (fn [edge] (:dest edge)))
        (set)
        (union (get-conditionally-required-data-nodes-for-action process-definition case action))))
 
 (defn data-produced-by-action
   {:test (fn []
-           (is (= (data-produced-by-action (test-case-definition) :d) #{:a}))
-           (is (= (data-produced-by-action (test-case-definition) :b) #{:c}))
-           (is (= (data-produced-by-action (test-case-definition) :a) #{})))}
+           (is (= (data-produced-by-action (test-process) :d) #{:a}))
+           (is (= (data-produced-by-action (test-process) :b) #{:c}))
+           (is (= (data-produced-by-action (test-process) :a) #{})))}
   [process-definition action]
   (->> (graph/find-edges process-definition {:src         action
-                                            :association :produces})
+                                             :association :produces})
        (map (fn [edge] (:dest edge)))
        (set)))
 
 (defn actions-performed-by-role
   [process-definition role]
   (->> (graph/find-edges process-definition {:src         role
-                                            :association :performs})
+                                             :association :performs})
        (map (fn [edge] (:dest edge)))
        (set)))
 
 (defn actions-that-require-data
   {:test (fn []
-           (is (= (actions-that-require-data (test-case-definition) :e) #{:b :d :a}))
-           (is (= (actions-that-require-data (test-case-definition) :b) #{:a :i})))}
+           (is (= (actions-that-require-data (test-process) :e) #{:b :d :a}))
+           (is (= (actions-that-require-data (test-process) :b) #{:a :i})))}
   [process-definition data]
   (->> (graph/find-edges process-definition {:dest        data
-                                            :association :requires})
+                                             :association :requires})
        (map (fn [edge] (:src edge)))
        (set)))
 
 (defn- actions-that-can-be-performed-after-action
   {:test (fn []
-           (is (= (actions-that-can-be-performed-after-action (test-case-definition) :g) #{:a :b :d})))}
+           (is (= (actions-that-can-be-performed-after-action (test-process) :g) #{:a :b :d})))}
   [process-definition action]
   (apply union (map (fn [data] (actions-that-require-data process-definition data))
                     (data-produced-by-action process-definition action))))
 
 (defn uncommit-data
   {:test (fn []
-           (is (false? (-> (add-data-to-case {} :a "swell")
-                           (uncommit-data :a)
-                           (case-has-committed-data? :a))))
-           (is (true? (-> (add-data-to-case {} :a "swell")
-                          (add-data-to-case :b "turnt")
-                          (uncommit-data :a)
-                          (case-has-committed-data? :b))))
+           (is (not (-> (add-data {} :a "swell")
+                        (uncommit-data :a)
+                        (has-committed-data? :a))))
+           (is (-> (add-data {} :a "swell")
+                   (add-data :b "turnt")
+                   (uncommit-data :a)
+                   (has-committed-data? :b)))
            (is (= (uncommit-data {} :a) {})))}
   [case key]
   (if (contains? case key)
@@ -224,58 +224,58 @@
 
 (defn actions-with-prereqs-present
   {:test (fn []
-           (is (= (actions-with-prereqs-present (test-case-definition) {}) #{:f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :e "yeah")) #{:d :f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :b {:power-level 9001})) #{:f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :e "yeah")
-                                                                           (add-data-to-case :b {:power-level 9001})))
+           (is (= (actions-with-prereqs-present (test-process) {}) #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-process) (add-data {} :e "yeah")) #{:d :f :g}))
+           (is (= (actions-with-prereqs-present (test-process) (add-data {} :b {:power-level 9001})) #{:f :g}))
+           (is (= (actions-with-prereqs-present (test-process) (-> {}
+                                                                   (add-data :e "yeah")
+                                                                   (add-data :b {:power-level 9001})))
                   #{:a :d :f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (add-data-to-case {} :e "total")) #{:d :f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :e "total")
-                                                                           (uncommit-data :e)))
+           (is (= (actions-with-prereqs-present (test-process) (add-data {} :e "total")) #{:d :f :g}))
+           (is (= (actions-with-prereqs-present (test-process) (-> {}
+                                                                   (add-data :e "total")
+                                                                   (uncommit-data :e)))
                   #{:f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:power-level 9001})
-                                                                           (add-data-to-case :j "radical")))
+           (is (= (actions-with-prereqs-present (test-process) (-> {}
+                                                                   (add-data :b {:power-level 9001})
+                                                                   (add-data :j "radical")))
                   #{:i :f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:power-level 9001})
-                                                                           (add-data-to-case :j "radical")
-                                                                           (uncommit-data :j)))
+           (is (= (actions-with-prereqs-present (test-process) (-> {}
+                                                                   (add-data :b {:power-level 9001})
+                                                                   (add-data :j "radical")
+                                                                   (uncommit-data :j)))
                   #{:f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:power-level 9001})))
+           (is (= (actions-with-prereqs-present (test-process) (-> {}
+                                                                   (add-data :b {:power-level 9001})))
                   #{:f :g}))
-           (is (= (actions-with-prereqs-present (test-case-definition) (-> {}
-                                                                           (add-data-to-case :b {:power-level 8900})))
+           (is (= (actions-with-prereqs-present (test-process) (-> {}
+                                                                   (add-data :b {:power-level 8900})))
                   #{:i :f :g})))}
   [process-definition case]
   (->> (all-actions process-definition)
        (reduce (fn [acc action]
                  (let [prereqs (data-prereqs-for-action process-definition case action)]
-                   (if (every? true? (map (fn [prereq] (case-has-committed-data? case prereq)) prereqs))
+                   (if (every? true? (map (fn [prereq] (has-committed-data? case prereq)) prereqs))
                      (conj acc action)
                      acc)))
                #{})))
 
 (defn actions-performed
   {:test (fn []
-           (is (= (actions-performed (test-case-definition) (add-data-to-case {} :a "swag")) #{:d}))
-           (is (= (actions-performed (test-case-definition) (-> {}
-                                                                (add-data-to-case :a "swag")
-                                                                (add-data-to-case :c "yolo")))
+           (is (= (actions-performed (test-process) (add-data {} :a "swag")) #{:d}))
+           (is (= (actions-performed (test-process) (-> {}
+                                                        (add-data :a "swag")
+                                                        (add-data :c "yolo")))
                   #{:d :f}))
-           (is (= (actions-performed (test-case-definition) (add-data-to-case {} :c "yolo")) #{:f}))
-           (is (= (actions-performed (test-case-definition) {}) #{})))}
+           (is (= (actions-performed (test-process) (add-data {} :c "yolo")) #{:f}))
+           (is (= (actions-performed (test-process) {}) #{})))}
   [process-definition case]
   (->> (all-actions process-definition)
        (reduce (fn [acc action]
                  (let [produced-data (data-produced-by-action process-definition action)]
                    (cond
                      (empty? produced-data) acc
-                     (every? true? (map (fn [data] (case-has-committed-data? case data)) produced-data)) (conj acc action)
+                     (every? true? (map (fn [data] (has-committed-data? case data)) produced-data)) (conj acc action)
                      :default acc)))
                #{})))
 
@@ -285,17 +285,17 @@
 
 (defn action-allowed?
   {:test (fn []
-           (is (false? (action-allowed? (test-case-definition) {} :a)))
-           (is (false? (action-allowed? (test-case-definition) {:e "yeah"} :a)))
-           (is (true? (action-allowed? (test-case-definition) (-> {}
-                                                                  (add-data-to-case :b {:power-level 9001})
-                                                                  (add-data-to-case :e "yeah")) :a)))
-           (is (true? (action-allowed? (test-case-definition) (add-data-to-case {} :e "yeah") :d)))
-           (is (false? (action-allowed? (test-case-definition) (add-data-to-case {} :c "yeah") :d)))
-           (is (false? (action-allowed? (test-case-definition) (-> {}
-                                                                   (add-data-to-case :a "lol")
-                                                                   (add-data-to-case :b {:power-level 9001})
-                                                                   (add-data-to-case :c "yeah")) :d))))}
+           (is (false? (action-allowed? (test-process) {} :a)))
+           (is (false? (action-allowed? (test-process) {:e "yeah"} :a)))
+           (is (true? (action-allowed? (test-process) (-> {}
+                                                          (add-data :b {:power-level 9001})
+                                                          (add-data :e "yeah")) :a)))
+           (is (true? (action-allowed? (test-process) (add-data {} :e "yeah") :d)))
+           (is (false? (action-allowed? (test-process) (add-data {} :c "yeah") :d)))
+           (is (false? (action-allowed? (test-process) (-> {}
+                                                           (add-data :a "lol")
+                                                           (add-data :b {:power-level 9001})
+                                                           (add-data :c "yeah")) :d))))}
   [process-definition case action]
   (contains? (actions-with-prereqs-present process-definition case) action))
 
@@ -303,12 +303,12 @@
   "uncommits all data nodes that have a production edge from the specified action node"
   {:test (fn []
            (is (true? (as-> {} case
-                            (add-data-to-case case :e "ey")
-                            (add-data-to-case case :h "kolasås")
-                            (add-data-to-case case :a "sås")
-                            (uncommit-datas-produced-by-action (test-case-definition) case :g)
-                            (every? false? [(case-has-committed-data? case :e)
-                                            (case-has-committed-data? case :h)])))))}
+                            (add-data case :e "ey")
+                            (add-data case :h "kolasås")
+                            (add-data case :a "sås")
+                            (uncommit-datas-produced-by-action (test-process) case :g)
+                            (every? false? [(has-committed-data? case :e)
+                                            (has-committed-data? case :h)])))))}
   [process-definition case action]
   (loop [loop-case case
          [data & datas] (data-produced-by-action process-definition action)]
@@ -322,34 +322,34 @@
   the same procedure on all actions that require the data produced by the specified action."
   {:test (fn []
            (as-> {} case
-                 (add-data-to-case case :c "far out")
-                 (add-data-to-case case :h "no way")
-                 (invalidate-action (test-case-definition) case :b)
+                 (add-data case :c "far out")
+                 (add-data case :h "no way")
+                 (invalidate-action (test-process) case :b)
                  (do
-                   (is (not (case-has-committed-data? case :c)))
-                   (is (case-has-committed-data? case :h))
-                   (is (not (action-allowed? (test-case-definition) case :b)))))
+                   (is (not (has-committed-data? case :c)))
+                   (is (has-committed-data? case :h))
+                   (is (not (action-allowed? (test-process) case :b)))))
            (as-> {} case
-                 (add-data-to-case case :c "far out")
-                 (add-data-to-case case :e "yoloswaggins")
-                 (add-data-to-case case :a "dope")
-                 (add-data-to-case case :h "fuego")
-                 (invalidate-action (test-case-definition) case :g)
+                 (add-data case :c "far out")
+                 (add-data case :e "yoloswaggins")
+                 (add-data case :a "dope")
+                 (add-data case :h "fuego")
+                 (invalidate-action (test-process) case :g)
                  (do
-                   (is (false? (case-has-committed-data? case :c)))
-                   (is (false? (case-has-committed-data? case :e)))
-                   (is (false? (case-has-committed-data? case :a)))
-                   (is (false? (case-has-committed-data? case :h)))))
+                   (is (false? (has-committed-data? case :c)))
+                   (is (false? (has-committed-data? case :e)))
+                   (is (false? (has-committed-data? case :a)))
+                   (is (false? (has-committed-data? case :h)))))
            (as-> {} case
-                 (add-data-to-case case :c "far out")
-                 (add-data-to-case case :e "yoloswaggins")
-                 (add-data-to-case case :a "dope")
-                 (add-data-to-case case :h "fuego")
-                 (invalidate-action (test-case-definition) case :d)
-                 (is (not-any? false? [(case-has-committed-data? case :h)
-                                       (case-has-committed-data? case :e)]))
-                 (is (not-any? true? [(case-has-committed-data? case :c)
-                                      (case-has-committed-data? case :a)]))))}
+                 (add-data case :c "far out")
+                 (add-data case :e "yoloswaggins")
+                 (add-data case :a "dope")
+                 (add-data case :h "fuego")
+                 (invalidate-action (test-process) case :d)
+                 (is (not-any? false? [(has-committed-data? case :h)
+                                       (has-committed-data? case :e)]))
+                 (is (not-any? true? [(has-committed-data? case :c)
+                                      (has-committed-data? case :a)]))))}
   [process-definition case action]
   (loop [loop-case case
          [loop-action & loop-actions] [action]
@@ -357,6 +357,6 @@
     (if (nil? loop-action)
       loop-case
       (recur (uncommit-datas-produced-by-action process-definition loop-case loop-action)
-             (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-actions) loop-actions)) seen-actions)
+             (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-action) loop-actions)) seen-actions)
              (conj seen-actions loop-action)))))
 

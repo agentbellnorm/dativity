@@ -1,6 +1,7 @@
 (ns dativity.demo
   (:require [dativity.core :as c]
-            [dativity.define :as d]))
+            [dativity.define :as d]
+            [dativity.visualize :as v]))
 
 
 
@@ -78,7 +79,7 @@
 
 ;; Look at the graph
 
-(d/show-graph-image! case-model)
+(v/generate-png case-model)
 
 
 
@@ -143,8 +144,8 @@
 
 (swap! case-atom (fn [case]
                    (-> case
-                       (c/add-data-to-case :customer-id "199209041111")
-                       (c/add-data-to-case :case-id "1234"))))
+                       (c/add-data :customer-id "199209041111")
+                       (c/add-data :case-id "1234"))))
 
 
 
@@ -181,9 +182,9 @@
 
 (swap! case-atom
        (fn [case]
-         (c/add-data-to-case case :loan-details {:amount  100000
-                                                 :purpose "dunder-honung"
-                                                 :product "blanco"})))
+         (c/add-data case :loan-details {:amount  100000
+                                         :purpose "dunder-honung"
+                                         :product "blanco"})))
 
 
 
@@ -217,9 +218,9 @@
 ;; The system produces the credit application document
 
 (swap! case-atom (fn [case]
-                   (c/add-data-to-case case
-                                       :credit-application-document
-                                       {:document-id "abc-123"})))
+                   (c/add-data case
+                               :credit-application-document
+                               {:document-id "abc-123"})))
 
 
 
@@ -270,9 +271,9 @@
 ;; The officer signs the document
 
 (swap! case-atom (fn [case]
-                   (c/add-data-to-case case
-                                       :officer-signature
-                                       "Krösus Sork")))
+                   (c/add-data case
+                               :officer-signature
+                               "Krösus Sork")))
 
 
 
@@ -347,10 +348,10 @@
 (swap! case-atom
        (fn [case]
          (-> case
-             (c/add-data-to-case :loan-details {:amount 150000 :purpose "dunder-honung" :product "blanco"})
-             (c/add-data-to-case :credit-application-document {:document-id "cde-456"})
-             (c/add-data-to-case :officer-signature "Krösus Sork")
-             (c/add-data-to-case :applicant-signature "Bamse"))))
+             (c/add-data :loan-details {:amount 150000 :purpose "dunder-honung" :product "blanco"})
+             (c/add-data :credit-application-document {:document-id "cde-456"})
+             (c/add-data :officer-signature "Krösus Sork")
+             (c/add-data :applicant-signature "Bamse"))))
 
 
 
@@ -378,7 +379,7 @@
 
 ;; The loan is paid out by the system
 
-(swap! case-atom (fn [case] (c/add-data-to-case case :loan-number "9021-3457653")))
+(swap! case-atom (fn [case] (c/add-data case :loan-number "9021-3457653")))
 
 
 
@@ -442,7 +443,7 @@
 
 ;; Take a look at the model
 
-(d/show-graph-image! case-model-countersign)
+(v/generate-png case-model-countersign)
 
 
 
@@ -455,12 +456,12 @@
 
 (def big-loan-case
   (atom (-> {}
-            (c/add-data-to-case :customer-id "199209041111")
-            (c/add-data-to-case :case-id "1234")
-            (c/add-data-to-case :loan-details {:amount 400000 :purpose "dunder-honung" :product "blanco"})
-            (c/add-data-to-case :credit-application-document {:document-id "cde-456"})
-            (c/add-data-to-case :officer-signature "Krösus Sork")
-            (c/add-data-to-case :applicant-signature "Bamse"))))
+            (c/add-data :customer-id "199209041111")
+            (c/add-data :case-id "1234")
+            (c/add-data :loan-details {:amount 400000 :purpose "dunder-honung" :product "blanco"})
+            (c/add-data :credit-application-document {:document-id "cde-456"})
+            (c/add-data :officer-signature "Krösus Sork")
+            (c/add-data :applicant-signature "Bamse"))))
 
 
 
@@ -471,12 +472,12 @@
 
 (def small-loan-case
   (atom (-> {}
-            (c/add-data-to-case :customer-id "199209041111")
-            (c/add-data-to-case :case-id "1234")
-            (c/add-data-to-case :loan-details {:amount 50000 :purpose "dunder-honung" :product "blanco"})
-            (c/add-data-to-case :credit-application-document {:document-id "cde-456"})
-            (c/add-data-to-case :officer-signature "Krösus Sork")
-            (c/add-data-to-case :applicant-signature "Bamse"))))
+            (c/add-data :customer-id "199209041111")
+            (c/add-data :case-id "1234")
+            (c/add-data :loan-details {:amount 50000 :purpose "dunder-honung" :product "blanco"})
+            (c/add-data :credit-application-document {:document-id "cde-456"})
+            (c/add-data :officer-signature "Krösus Sork")
+            (c/add-data :applicant-signature "Bamse"))))
 
 
 
@@ -512,7 +513,7 @@
 
 (swap! big-loan-case
        (fn [case]
-         (c/add-data-to-case case :counter-signature "Vargen")))
+         (c/add-data case :counter-signature "Vargen")))
 
 
 

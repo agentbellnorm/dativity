@@ -1,5 +1,5 @@
 (ns dativity.define
-  (:require [dativity.graph-functions :as graph]
+  (:require [dativity.graph :as graph]
             [clojure.test :refer :all]))
 
 (defn empty-case-model
@@ -34,7 +34,7 @@
                 :label       "requires"}])
 
 (defn action-requires-conditional
-  "condition fn does can assume that the data exists"
+  "condition fn can assume that the data exists"
   [action prereq predicate data-parameter]
   [action prereq {:association :requires-conditional
                 :color       :purple
@@ -47,11 +47,6 @@
   [role action {:association :performs
                 :color       :orange
                 :label       "does"}])
-
-(defn show-graph-image!
-  [graph]
-  (graph/show-image graph))
-
 
 (defn add-entity-to-model
   {:test (fn []
@@ -73,7 +68,3 @@
              (is (= 2 (graph/count-nodes graph)))))}
   [case relationship]
   (graph/add-directed-edge case relationship))
-
-
-(comment (graph/pprint case-graph))
-

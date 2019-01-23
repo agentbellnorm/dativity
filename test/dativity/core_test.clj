@@ -3,7 +3,7 @@
             [dativity.core :as c]
             [dativity.define :as d]))
 
-(defn printreturn [x] (println x) x)
+(defn printreturn [x] (clojure.pprint/pprint x) x)
 
 (def case-graph
   (-> (d/empty-case-model)
@@ -94,6 +94,8 @@
       (d/add-relationship-to-model (d/role-performs :system :calculate-amortization))
       (d/add-relationship-to-model (d/role-performs :applicant :sign-credit-application-document))))
 
+(comment (dativity.visualize/generate-png case-graph))
+
 (deftest actions-it
   (testing "runs a case through the whole flow and makes
             sure that only the right actions are available"
@@ -102,15 +104,15 @@
             (is (= (c/next-actions case-graph case) #{:create-case}))
             (is (= (c/next-actions case-graph case :applicant) #{:create-case}))
             (is (= (c/next-actions case-graph case :system) #{})) case)
-          (c/add-data-to-case case :case-id "100001")
-          (c/add-data-to-case case :customer-id "9209041111")
+          (c/add-data case :case-id "100001")
+          (c/add-data case :customer-id "9209041111")
           (do
             (is (= (c/next-actions case-graph case) #{:add-loan-details
                                                       :add-collateral
                                                       :consent-to-personal-data-retrieval-and-storage
                                                       :add-economy})) case)
-          (c/add-data-to-case case :loan-details {:amount  1000000
-                                                  :product "Bolån"})
+          (c/add-data case :loan-details {:amount  1000000
+                                          :product "Bolån"})
           (do
             (is (= (c/next-actions case-graph case) #{:add-collateral
                                                       :consent-to-personal-data-retrieval-and-storage
@@ -118,15 +120,15 @@
             (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details}))
             (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
             (is (c/action-allowed? case-graph case :add-loan-details)) case)
-          (c/add-data-to-case case :collateral {:designation {:municipality "Täby"
-                                                              :region       "Pallen"
-                                                              :block        "11:45"}})
+          (c/add-data case :collateral {:designation {:municipality "Täby"
+                                                      :region       "Pallen"
+                                                      :block        "11:45"}})
           (do
             (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details :add-collateral}))
             (is (not (c/action-allowed? case-graph case :add-collateral-link))) case)
-          (c/add-data-to-case case :consent {:uc  true
-                                             :lmv true
-                                             :pep true})
+          (c/add-data case :consent {:uc  true
+                                     :lmv true
+                                     :pep true})
           (do
             (is (= (c/next-actions case-graph case) #{:fetch-supplimentary-info
                                                       :get-currently-owned-real-estate
@@ -134,11 +136,11 @@
                                                       :add-economy
                                                       :know-your-customer}))
             (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
-          (c/add-data-to-case case :economy {:income   500000
-                                             :children 2})
-          (c/add-data-to-case case :customer-info {:name "Carl-Jan Granqvist"
-                                                   :age  63})
-          (c/add-data-to-case case :currently-owned-real-estate {:name "Villa villerkulla"})
+          (c/add-data case :economy {:income   500000
+                                     :children 2})
+          (c/add-data case :customer-info {:name "Carl-Jan Granqvist"
+                                           :age  63})
+          (c/add-data case :currently-owned-real-estate {:name "Villa villerkulla"})
           (do
             (is (= (c/next-actions case-graph case) #{:create-collateral-link
                                                       :know-your-customer
@@ -154,15 +156,15 @@
             (is (= (c/next-actions case-graph case) #{:create-case}))
             (is (= (c/next-actions case-graph case :applicant) #{:create-case}))
             (is (= (c/next-actions case-graph case :system) #{})) case)
-          (c/add-data-to-case case :case-id "100001")
-          (c/add-data-to-case case :customer-id "9209041111")
+          (c/add-data case :case-id "100001")
+          (c/add-data case :customer-id "9209041111")
           (do
             (is (= (c/next-actions case-graph case) #{:add-loan-details
                                                       :add-collateral
                                                       :consent-to-personal-data-retrieval-and-storage
                                                       :add-economy})) case)
-          (c/add-data-to-case case :loan-details {:amount  1000000
-                                                  :product "Bolån"})
+          (c/add-data case :loan-details {:amount  1000000
+                                          :product "Bolån"})
           (do
             (is (= (c/next-actions case-graph case) #{:add-collateral
                                                       :consent-to-personal-data-retrieval-and-storage
@@ -170,15 +172,15 @@
             (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details}))
             (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
             (is (c/action-allowed? case-graph case :add-loan-details)) case)
-          (c/add-data-to-case case :collateral {:designation {:municipality "Täby"
-                                                              :region       "Pallen"
-                                                              :block        "11:45"}})
+          (c/add-data case :collateral {:designation {:municipality "Täby"
+                                                      :region       "Pallen"
+                                                      :block        "11:45"}})
           (do
             (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details :add-collateral}))
             (is (not (c/action-allowed? case-graph case :add-collateral-link))) case)
-          (c/add-data-to-case case :consent {:uc  true
-                                             :lmv true
-                                             :pep true})
+          (c/add-data case :consent {:uc  true
+                                     :lmv true
+                                     :pep true})
           (do
             (is (= (c/next-actions case-graph case) #{:fetch-supplimentary-info
                                                       :get-currently-owned-real-estate
@@ -186,7 +188,7 @@
                                                       :add-economy
                                                       :know-your-customer}))
             (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
-          (c/invalidate-action case-graph case :add-loan-details) ; INVALIDATION!!
+          (printreturn (c/invalidate-action case-graph case :add-loan-details)) ; INVALIDATION!!
           (do
             (is (not (c/action-allowed? case-graph case :get-currently-owned-real-estate)))
             (is (not (c/action-allowed? case-graph case :fetch-supplimentary-info)))
@@ -209,28 +211,28 @@
   If the loan amount is lower than or equal to 2 000 000 then it's possible to proceed and create
   the collateral-link without a valuation. It's still possible to add it, but not required."
     (do (as-> {} case
-              (c/add-data-to-case case :case-id "100001")
-              (c/add-data-to-case case :customer-id "9209041111")
-              (c/add-data-to-case case :consent {:uc true :lmv true :pep true})
-              (c/add-data-to-case case :currently-owned-real-estate {:name "Villa villerkulla"})
-              (c/add-data-to-case case :loan-details {:amount 1000000 :product "Bolån"})
-              (c/add-data-to-case case :collateral {:designation {:municipality "Täby"
-                                                                  :region       "Pallen"
-                                                                  :block        "11:45"}})
+              (c/add-data case :case-id "100001")
+              (c/add-data case :customer-id "9209041111")
+              (c/add-data case :consent {:uc true :lmv true :pep true})
+              (c/add-data case :currently-owned-real-estate {:name "Villa villerkulla"})
+              (c/add-data case :loan-details {:amount 1000000 :product "Bolån"})
+              (c/add-data case :collateral {:designation {:municipality "Täby"
+                                                          :region       "Pallen"
+                                                          :block        "11:45"}})
               (do
-                (is (c/action-allowed? case-graph case  :create-collateral-link))))
+                (is (c/action-allowed? case-graph case :create-collateral-link))))
         (as-> {} case
-              (c/add-data-to-case case :case-id "100001")
-              (c/add-data-to-case case :customer-id "9209041111")
-              (c/add-data-to-case case :consent {:uc true :lmv true :pep true})
-              (c/add-data-to-case case :currently-owned-real-estate {:name "Villa villerkulla"})
-              (c/add-data-to-case case :loan-details {:amount 3000000 :product "Bolån"})
-              (c/add-data-to-case case :collateral {:designation {:municipality "Täby"
-                                                                  :region       "Pallen"
-                                                                  :block        "11:45"}})
+              (c/add-data case :case-id "100001")
+              (c/add-data case :customer-id "9209041111")
+              (c/add-data case :consent {:uc true :lmv true :pep true})
+              (c/add-data case :currently-owned-real-estate {:name "Villa villerkulla"})
+              (c/add-data case :loan-details {:amount 3000000 :product "Bolån"})
+              (c/add-data case :collateral {:designation {:municipality "Täby"
+                                                          :region       "Pallen"
+                                                          :block        "11:45"}})
               (do
-                (is (not (c/action-allowed? case-graph case  :create-collateral-link)))
+                (is (not (c/action-allowed? case-graph case :create-collateral-link)))
                 case)
-              (c/add-data-to-case case :collateral-valuation {:valuation 5700000
-                                                              :valuator "Karl Anka"})
-              (is (c/action-allowed? case-graph case  :create-collateral-link))))))
+              (c/add-data case :collateral-valuation {:valuation 5700000
+                                                      :valuator  "Karl Anka"})
+              (is (c/action-allowed? case-graph case :create-collateral-link))))))
