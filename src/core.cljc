@@ -1,12 +1,9 @@
-(ns dativity.core
-  (:require [dativity.define :as define]
-            [dativity.graph :as graph]
-            [clojure.test :refer :all]
-            [clojure.set :refer :all]))
-
-(in-ns 'dativity.core)
-
-(defn printreturn [x] (println x) x)
+(ns core
+  (:require #?(:clj [clojure.test :refer :all]
+               :cljs [cljs.test :refer-macros [is]])
+                    [define :as define]
+                    [graph :as graph]
+                    [clojure.set :refer [union intersection difference]]))
 
 (defn get-data-from-case
   {:test (fn []
@@ -311,7 +308,7 @@
                                             (has-committed-data? case :h)])))))}
   [process-definition case action]
   (loop [loop-case case
-         [data & datas] (data-produced-by-action process-definition action)]
+         [data & datas] (vec (data-produced-by-action process-definition action))]
     (if-not data
       loop-case
       (recur (uncommit-data loop-case data)
@@ -357,6 +354,6 @@
     (if (nil? loop-action)
       loop-case
       (recur (uncommit-datas-produced-by-action process-definition loop-case loop-action)
-             (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-action) loop-actions)) seen-actions)
+             (vec (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-action) loop-actions)) seen-actions))
              (conj seen-actions loop-action)))))
 

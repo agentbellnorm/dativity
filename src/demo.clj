@@ -1,7 +1,7 @@
-(ns dativity.demo
-  (:require [dativity.core :as c]
-            [dativity.define :as d]
-            [dativity.visualize :as v]))
+(ns demo
+  (:require [core :as c]
+            [define :as d]
+            [visualize :as v]))
 
 
 
@@ -79,7 +79,7 @@
 
 ;; Look at the graph
 
-(v/generate-png case-model)
+(comment (v/generate-png case-model))
 
 
 
@@ -443,7 +443,7 @@
 
 ;; Take a look at the model
 
-(v/generate-png case-model-countersign)
+(comment (v/generate-png case-model-countersign))
 
 
 

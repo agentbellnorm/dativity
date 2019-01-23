@@ -1,6 +1,7 @@
-(ns dativity.define
-  (:require [dativity.graph :as graph]
-            [clojure.test :refer :all]))
+(ns define
+  (:require #?(:clj [clojure.test :refer :all]
+               :cljs [cljs.test :refer-macros [is]])
+                    [graph :as graph]))
 
 (defn empty-case-model
   []
@@ -24,23 +25,23 @@
 (defn action-produces
   [action creates]
   [action creates {:association :produces
-                 :color       :green
-                 :label       "produces"}])
+                   :color       :green
+                   :label       "produces"}])
 
 (defn action-requires
   [action prereq]
   [action prereq {:association :requires
-                :color       :red
-                :label       "requires"}])
+                  :color       :red
+                  :label       "requires"}])
 
 (defn action-requires-conditional
   "condition fn can assume that the data exists"
   [action prereq predicate data-parameter]
-  [action prereq {:association :requires-conditional
-                :color       :purple
-                :label       "requires?"
-                :condition   predicate
-                :data-parameter data-parameter}])
+  [action prereq {:association    :requires-conditional
+                  :color          :purple
+                  :label          "requires?"
+                  :condition      predicate
+                  :data-parameter data-parameter}])
 
 (defn role-performs
   [role action]

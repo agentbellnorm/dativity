@@ -1,8 +1,8 @@
-(ns dativity.visualize
+(ns visualize
   (:require
     [ubergraph.core :as uber]))
 
-(defn to-uber
+(defn- to-uber
   [graph]
   (let [nodes (->> (:nodes graph)
                    (map (fn [[k v]] [k v]))

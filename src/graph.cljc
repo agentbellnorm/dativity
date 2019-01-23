@@ -1,5 +1,7 @@
-(ns dativity.graph
-  (:require [clojure.test :refer :all]))
+(ns graph
+  (:require #?(:clj  [clojure.test :refer :all]
+               :cljs [cljs.test :refer-macros [is]])
+    [clojure.set :refer [subset?]]))
 
 (defn empty-graph
   []
@@ -134,5 +136,5 @@
   [graph attr-query]
   (->> (:edges graph)
        (filter (fn [[_ edge-attributes]]
-                 (clojure.set/subset? (set attr-query) (set edge-attributes))))
+                 (subset? (set attr-query) (set edge-attributes))))
        (map val)))

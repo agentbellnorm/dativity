@@ -1,7 +1,7 @@
-(ns dativity.core-test
+(ns core-test
   (:require [clojure.test :refer :all]
-            [dativity.core :as c]
-            [dativity.define :as d]))
+            [core :as c]
+            [define :as d]))
 
 (defn printreturn [x] (clojure.pprint/pprint x) x)
 
@@ -94,7 +94,7 @@
       (d/add-relationship-to-model (d/role-performs :system :calculate-amortization))
       (d/add-relationship-to-model (d/role-performs :applicant :sign-credit-application-document))))
 
-(comment (dativity.visualize/generate-png case-graph))
+(comment (visualize/generate-png case-graph))
 
 (deftest actions-it
   (testing "runs a case through the whole flow and makes
@@ -144,8 +144,7 @@
           (do
             (is (= (c/next-actions case-graph case) #{:create-collateral-link
                                                       :know-your-customer
-                                                      :add-collateral-valuation})) case))
-    ))
+                                                      :add-collateral-valuation})) case))))
 
 
 (deftest invalidate-it
@@ -181,23 +180,28 @@
           (c/add-data case :consent {:uc  true
                                      :lmv true
                                      :pep true})
+          (c/add-data case :know-your-customer-data {:income 10000})
           (do
             (is (= (c/next-actions case-graph case) #{:fetch-supplimentary-info
                                                       :get-currently-owned-real-estate
                                                       :add-collateral-valuation
-                                                      :add-economy
-                                                      :know-your-customer}))
+                                                      :add-economy}))
             (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
-          (printreturn (c/invalidate-action case-graph case :add-loan-details)) ; INVALIDATION!!
+          (c/add-data case :currently-owned-real-estate {:address "Bägersta Byväg 17"})
+          (do (is (= (c/actions-performed case-graph case) #{:create-case
+                                                             :add-loan-details
+                                                             :add-collateral
+                                                             :get-currently-owned-real-estate
+                                                             :consent-to-personal-data-retrieval-and-storage
+                                                             :know-your-customer}))
+              (is (c/action-allowed? case-graph case :create-collateral-link)) case)
+          (c/invalidate-action case-graph case :consent-to-personal-data-retrieval-and-storage) ; INVALIDATION!!
           (do
-            (is (not (c/action-allowed? case-graph case :get-currently-owned-real-estate)))
             (is (not (c/action-allowed? case-graph case :fetch-supplimentary-info)))
-            (is (not (c/action-allowed? case-graph case :know-your-customer)))
-            (is (= (c/next-actions case-graph case) #{:add-loan-details
-                                                      :add-collateral
+            (is (= (c/next-actions case-graph case) #{:add-collateral-valuation
                                                       :consent-to-personal-data-retrieval-and-storage
                                                       :add-economy}))
-            (is (= (c/actions-performed case-graph case) #{:create-case}))
+            (is (= (c/actions-performed case-graph case) #{:create-case :add-loan-details :add-collateral}))
             (is (not (c/action-allowed? case-graph case :produce-credit-application-document)))
             (is (c/action-allowed? case-graph case :add-loan-details))
             (is (c/case-has-data? case :loan-details))
