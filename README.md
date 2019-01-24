@@ -28,7 +28,7 @@ The above entites relate in the following ways:
 _a simple credit application process_
 
 In the above example, the action 'create case' produces the data 'case id' and 'customer-id'. When those pieces of information have been added to the case, 'enter-loan-details' can be performed because it only depends on 'case-id' to be present.
-##Abilities
+## Abilities
 Given a process definition and a set of collected data, Dativity can answer questions like:
 * What actions can be performed next?
 * What actions can be performed by role X (user, system, officer...)
