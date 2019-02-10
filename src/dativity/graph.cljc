@@ -1,4 +1,4 @@
-(ns graph
+(ns dativity.graph
   (:require #?(:clj  [clojure.test :refer :all]
                :cljs [cljs.test :refer-macros [is]])
     [clojure.set :refer [subset?]]))

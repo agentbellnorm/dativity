@@ -1,7 +1,7 @@
-(ns demo
-  (:require [core :as c]
-            [define :as d]
-            [visualize :as v]))
+(ns dativity.demo
+  (:require [dativity.core :as c]
+            [dativity.define :as d]
+            [dativity.visualize :as v]))
 
 
 

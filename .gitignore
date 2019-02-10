@@ -13,3 +13,4 @@ pom.xml.asc
 .hgignore
 .hg/
 */case-graph.png
+.shadow-cljs

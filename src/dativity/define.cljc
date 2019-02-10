@@ -1,7 +1,7 @@
-(ns define
+(ns dativity.define
   (:require #?(:clj [clojure.test :refer :all]
                :cljs [cljs.test :refer-macros [is]])
-                    [graph :as graph]))
+                    [dativity.graph :as graph]))
 
 (defn empty-case-model
   []

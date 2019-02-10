@@ -1,4 +1,4 @@
-(ns visualize
+(ns dativity.visualize
   (:require
     [ubergraph.core :as uber]))
 

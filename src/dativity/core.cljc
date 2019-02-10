@@ -1,8 +1,8 @@
-(ns core
+(ns dativity.core
   (:require #?(:clj [clojure.test :refer :all]
                :cljs [cljs.test :refer-macros [is]])
-                    [define :as define]
-                    [graph :as graph]
+                    [dativity.define :as define]
+                    [dativity.graph :as graph]
                     [clojure.set :refer [union intersection difference]]))
 
 (defn get-data-from-case
