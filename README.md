@@ -1,6 +1,6 @@
 # dativity
 
-Get 
+[![Clojars Project](https://img.shields.io/clojars/v/dativity.svg)](https://clojars.org/dativity)
 
 Dativity is a stateless, data driven process engine library for Clojure and ClojureScript.
 
