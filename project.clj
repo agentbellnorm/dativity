@@ -1,4 +1,4 @@
-(defproject dativity "1.0.0"
+(defproject dativity "0.1.0-SNAPSHOT"
   :description "stateless, data driven process engine"
   :url "https://github.com/agentbellnorm/dativity"
   :license {:name "MIT"
