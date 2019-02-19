@@ -7,9 +7,10 @@
 
 (defn get-data-from-case
   {:test (fn []
-           (is (= (get-data-from-case {:a {:committed true :value "so-true"}} :a) "so-true")))}
+           (is (= (get-data-from-case {:dativity/commits {:a true}
+                                       :a                "so-true"} :a) "so-true")))}
   [case key]
-  (:value (key case)))
+  (key case))
 
 (defn test-process
   "test graph for unit testing purposes, does not make sense really, but is simple."
@@ -44,25 +45,37 @@
 (defn add-data                                              ;; TODO: Should subsequent actions be invalidated if the data was already there?
   {:test (fn []
            (is (= (add-data {} :case-id 3)
-                  {:case-id {:committed true :value 3}}))
-           (is (= (add-data {:case-id     {:value 3 :committed true}
-                             :customer-id {:committed true :value "920904"}}
+                  {:dativity/commits {:case-id true}
+                   :case-id          3}))
+           (is (= (add-data {:dativity/commits {:case-id    true
+                                                :custmer-id true}
+                             :case-id          3
+                             :customer-id      "920904"}
                             :loan-number "90291234567")
-                  {:case-id     {:committed true :value 3}
-                   :customer-id {:committed true :value "920904"}
-                   :loan-number {:committed true :value "90291234567"}}))
-           (is (= (add-data {:case-id     {:committed true :value 3}
-                             :customer-id {:committed true :value "920904"}
-                             :loan-number {:committed true :value "90291234567"}}
+                  {:case-id          3
+                   :customer-id      "920904"
+                   :loan-number      "90291234567"
+                   :dativity/commits {:case-id     true
+                                      :custmer-id  true
+                                      :loan-number true}}))
+           (is (= (add-data {:dativity/commits {:case-id     true
+                                                :custmer-id  true
+                                                :loan-number true}
+                             :case-id          3
+                             :customer-id      "920904"
+                             :loan-number      "90291234567"}
                             :loan-details {:amount "1000000" :product "Bolån"})
-                  {:case-id      {:committed true :value 3}
-                   :customer-id  {:committed true :value "920904"}
-                   :loan-number  {:committed true :value "90291234567"}
-                   :loan-details {:committed true :value {:product "Bolån" :amount "1000000"}}}))
-           )}
+                  {:dativity/commits {:case-id      true
+                                      :custmer-id   true
+                                      :loan-number  true
+                                      :loan-details true}
+                   :case-id          3
+                   :customer-id      "920904"
+                   :loan-number      "90291234567"
+                   :loan-details     {:product "Bolån" :amount "1000000"}})))}
   [case key value]
-  (assoc case key {:committed true
-                   :value     value}))
+  (-> (assoc case key value)
+      (assoc-in [:dativity/commits key] true)))
 
 
 (defn all-actions
@@ -79,44 +92,38 @@
            (is (case-has-data? {:a {:committed true :value "hejhopp"}} :a))
            (is (case-has-data? {:a {:committed false :value "hejhopp"}} :a))
            (is (case-has-data? {:a {:committed false :value nil}} :a))
-           (is (not (case-has-data? {} :a)))
-           )}
+           (is (not (case-has-data? {} :a))))}
   [case data-key]
   (not (nil? (data-key case))))
 
 (defn has-committed-data?
   "Returns true if the given data node exists and is committed"
   {:test (fn []
-           (is (has-committed-data? {:a {:committed true
-                                         :value     "hejhopp"}
-                                     :b {:committed true
-                                         :value     "yoloswag"}}
+           (is (has-committed-data? {:dativity/commits {:a true :b true}
+                                     :a                "hejhopp"
+                                     :b                "yoloswag"}
                                     :a))
-           (is (has-committed-data? {:a {:committed true
-                                         :value     "hejhopp"}
-                                     :b {:committed true
-                                         :value     "yoloswag"}}
+           (is (has-committed-data? {:dativity/commits {:a true :b true}
+                                     :a                "hejhopp"
+                                     :b                "yoloswag"}
                                     :b))
-           (is (false? (has-committed-data? {:a {:committed false
-                                                 :value     "hejhopp"}
-                                             :b {:committed true
-                                                 :value     "yoloswag"}}
+           (is (false? (has-committed-data? {:dativity/commits {:a false :b true}
+                                             :a                "hejhopp"
+                                             :b                "yoloswag"}
                                             :a)))
-           (is (false? (has-committed-data? {:b {:committed true
-                                                 :value     "yoloswag"}}
+           (is (false? (has-committed-data? {:dativity/commits {:b true}
+                                             :b                "yoloswag"}
                                             :a))))}
   [case data-key]
-  (if (nil? (data-key case))
-    false
-    (:committed (data-key case))))
+  (and (not (nil? (data-key case)))
+       (get-in case [:dativity/commits data-key])))
 
 (defn case-has-uncommitted-data?
   "Returns true if the given data node exists on the case and is uncommitted"
   {:test (fn []
-           (is (case-has-uncommitted-data? {:a {:committed false
-                                                :value     "dank"}} :a))
-           (is (not (case-has-uncommitted-data? {:a {:committed true
-                                                     :value     "yoloswaggins"}} :a)))
+           (is (case-has-uncommitted-data? {:a                "dank"
+                                            :dativity/commits {:a false}} :a))
+           (is (not (case-has-uncommitted-data? (add-data {} :a "yoloswaggins") :a)))
            (is (not (case-has-uncommitted-data? {} :a)))
            )}
   [case data-key]
@@ -216,7 +223,7 @@
            (is (= (uncommit-data {} :a) {})))}
   [case key]
   (if (contains? case key)
-    (update-in case [key] assoc :committed false)
+    (assoc-in case [:dativity/commits key] false)
     case))
 
 (defn actions-with-prereqs-present
