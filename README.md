@@ -42,11 +42,14 @@ Given a process definition and a set of collected data, Dativity can answer ques
 * Is action X allowed?
 * What data is required for action X?
 
-Sometimes a user goes back to a previous step and change data. 
+##### Invalidating
+Sometimes a user goes has to go back and change data. 
 Then all subsequent (in the sense that the changed data is required by other actions) actions need to be invalidated.
-Dativity offers an invalidation feature, which rewinds the process to the action that was re-done. Previously entered data is kept, but the depending actions need to be performed again.
+Dativity has support for this type of scenario, where the case is 'rewinded' to the action that was re-done. Previously entered data is kept, but 'uncommitted', and depending actions need to be performed again.
 
 ## Examples  
+
+#### Basic functionality
 
 The case data is just a map
 ```clojure
@@ -153,6 +156,54 @@ Who can do what?
 (dativity.core/next-actions case-model case :officer)
 => #{}
 ```
+
+The document is produced and it is signed by the officer
+```clojure
+(def case 
+  (-> case
+    (dativity.core/add-data :credit-application-document {:document-id "abc-123"})))
+    
+Who can do what?
+```clojure
+(dativity.core/next-actions case-model case :applicant)
+=> #{}
+(dativity.core/next-actions case-model case :system)
+=> #{}
+(dativity.core/next-actions case-model case :officer)
+=> #{:sign-credit-application-document}
+```
+
+#### Invalidation
+
+
+When a user goes 'back' and updates data, it is likely that the 'subsequent' data is no longer valid. For example, if the loan amount is changed, the produced application document is not valid anymore.
+In general, when an action is invalidated, all the data that is produced by that action is invalid, and data that is produced by actions that required the invalid data is invalidated recursively.
+
+```clojure
+(def case
+    (dativity.core/invalidate-action case-model case :enter-loan-details))
+```
+
+Who can do what?
+```clojure
+(dativity.core/next-actions case-model case :applicant)
+=> #{:enter-loan-details}
+(dativity.core/next-actions case-model case :system)
+=> #{}
+(dativity.core/next-actions case-model case :officer)
+=> #{}
+```
+
+Can the document still be signed?
+```clojure
+(dativity.core/action-allowed? case-model case :sign-credit-application-document)
+=> false
+```
+
+#### Conditionally required data
+
+
+
 ## Usage
 
 To generate graph pictures, install [graphviz](https://graphviz.gitlab.io/download/):
@@ -168,4 +219,4 @@ The core functionality of Dativity only depends on Clojure.
 
 MIT License
 
-Copyright (c) 2018 Morgan Bentell
+Copyright (c) 2019 Morgan Bentell
