@@ -8,16 +8,16 @@ It is inspired by the [Artifact centric business process model.](https://en.wiki
 
 ## Motivation 
 
-Conventional process engines (like [Activiti](https://www.activiti.org/)) are centered around activities and the sequence in which they should be performed.
+Conventional process engines (like [Activiti](https://www.activiti.org/)) are centered around activities and the sequence in which they should be performed according to design.
 
-The key concept of Dativity is not to say in what sequence actions in a process _should_ be performed. 
-But rather what actions _can_ be performed given how business activities depend on collected information. 
+The key idea of Dativity is to not say in what sequence actions in a process _should_ be performed. 
+But rather what actions are _possible_ to do given how actions depend on collected information. 
 
-For example, you cannot review an insurance claim before the claim has been submitted. However, it can be reviewed precisely after it has been submitted.
+For example, you cannot accept or deny an insurance claim before it has been submitted - it can be reviewed precisely after it has been submitted.
 
-Process engines should be concerned with process models,
+Process software should not keep its own state. The value the software is providing should be accessed through a pure function of two things: a static process-model, and a process instance consisting of data that evolves throughout the instance of the process as information is gathered.
 
-## 
+## Design
 
 Dativity models a process into three different entities:
 * Actions
@@ -162,7 +162,8 @@ The document is produced and it is signed by the officer
 (def case 
   (-> case
     (dativity.core/add-data :credit-application-document {:document-id "abc-123"})))
-    
+```    
+
 Who can do what?
 ```clojure
 (dativity.core/next-actions case-model case :applicant)
@@ -175,7 +176,6 @@ Who can do what?
 
 #### Invalidation
 
-
 When a user goes 'back' and updates data, it is likely that the 'subsequent' data is no longer valid. For example, if the loan amount is changed, the produced application document is not valid anymore.
 In general, when an action is invalidated, all the data that is produced by that action is invalid, and data that is produced by actions that required the invalid data is invalidated recursively.
 
@@ -184,7 +184,7 @@ In general, when an action is invalidated, all the data that is produced by that
     (dativity.core/invalidate-action case-model case :enter-loan-details))
 ```
 
-Who can do what?
+Now the only available action is to enter loan details again.
 ```clojure
 (dativity.core/next-actions case-model case :applicant)
 => #{:enter-loan-details}
@@ -194,7 +194,7 @@ Who can do what?
 => #{}
 ```
 
-Can the document still be signed?
+Now it's not possible to sign the application. 
 ```clojure
 (dativity.core/action-allowed? case-model case :sign-credit-application-document)
 => false
@@ -202,7 +202,20 @@ Can the document still be signed?
 
 #### Conditionally required data
 
+An action-requires-data edge (arrow in the diagram) can be conditional. The requirement is enforced if and only if a given predicate is true. The predicate is a function of one data node.
 
+To say that applications for loans of more than 300 000 require signatures from two officers we can write
+
+```clojure
+(def case-model 
+     (dativity.define/add-relationship-to-model case-model
+                                                (dativity.define/action-requires-conditional
+                                                  :payout-loan
+                                                  :counter-signature
+                                                  (fn [loan-details]
+                                                      (> (:amount loan-details) 300000))
+                                                  :loan-details)))
+```
 
 ## Usage
 

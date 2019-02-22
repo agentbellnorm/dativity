@@ -5,7 +5,9 @@
                     [dativity.graph :as graph]
                     [clojure.set :refer [union intersection difference]]))
 
-(defn get-data-from-case
+; Not needed in the public api. maybe not in the private either?
+(defn- get-data-from-case
+  "Returns the data for a given data key."
   {:test (fn []
            (is (= (get-data-from-case {:dativity/commits {:a true}
                                        :a                "so-true"} :a) "so-true")))}
@@ -43,6 +45,7 @@
 (comment (dativity.visualize/generate-png (test-process)))
 
 (defn add-data                                              ;; TODO: Should subsequent actions be invalidated if the data was already there?
+  "Adds data to a case and commits it. Same api as clojure.core/assoc."
   {:test (fn []
            (is (= (add-data {} :case-id 3)
                   {:dativity/commits {:case-id true}
@@ -79,6 +82,7 @@
 
 
 (defn all-actions
+  "Returns all actions in a case-model."
   {:test (fn []
            (is (= (all-actions (test-process)) #{:a :d :f :g :i})))}
   [process-definition]
@@ -159,7 +163,7 @@
        (set)))
 
 (defn data-prereqs-for-action                               ;; depends on case to determine conditional requirements
-  "returns data nodes that are required by action nodes. Conditional requirements are included
+  "Returns data nodes that are required by action nodes. Conditional requirements are included
   if and only if the conditions are true."
   {:test (fn []
            (is (= (data-prereqs-for-action (test-process) {} :a) #{:b :e}))
@@ -177,6 +181,7 @@
        (union (get-conditionally-required-data-nodes-for-action process-definition case action))))
 
 (defn data-produced-by-action
+  "Returns all datas that a given action produces."
   {:test (fn []
            (is (= (data-produced-by-action (test-process) :d) #{:a}))
            (is (= (data-produced-by-action (test-process) :b) #{:c}))
@@ -188,6 +193,7 @@
        (set)))
 
 (defn actions-performed-by-role
+  "Returns all actions that a role performs."
   [process-definition role]
   (->> (graph/find-edges process-definition {:src         role
                                              :association :performs})
@@ -195,6 +201,7 @@
        (set)))
 
 (defn actions-that-require-data
+  "Returns all actions that has a dependency to a given data."
   {:test (fn []
            (is (= (actions-that-require-data (test-process) :e) #{:b :d :a}))
            (is (= (actions-that-require-data (test-process) :b) #{:a :i})))}
@@ -211,7 +218,7 @@
   (apply union (map (fn [data] (actions-that-require-data process-definition data))
                     (data-produced-by-action process-definition action))))
 
-(defn uncommit-data
+(defn- uncommit-data
   {:test (fn []
            (is (not (-> (add-data {} :a "swell")
                         (uncommit-data :a)
@@ -226,7 +233,7 @@
     (assoc-in case [:dativity/commits key] false)
     case))
 
-(defn actions-with-prereqs-present
+(defn- actions-with-prereqs-present
   {:test (fn []
            (is (= (actions-with-prereqs-present (test-process) {}) #{:f :g}))
            (is (= (actions-with-prereqs-present (test-process) (add-data {} :e "yeah")) #{:d :f :g}))
@@ -265,6 +272,7 @@
                #{})))
 
 (defn actions-performed
+  "Returns all actions that were performed on a case"
   {:test (fn []
            (is (= (actions-performed (test-process) (add-data {} :a "swag")) #{:d}))
            (is (= (actions-performed (test-process) (-> {}
@@ -288,6 +296,7 @@
   ([process-definition case role] (intersection (next-actions process-definition case) (actions-performed-by-role process-definition role))))
 
 (defn action-allowed?
+  "Returns true if the given action has all data dependencies satisfied, otherwise false."
   {:test (fn []
            (is (false? (action-allowed? (test-process) {} :a)))
            (is (false? (action-allowed? (test-process) {:e "yeah"} :a)))
