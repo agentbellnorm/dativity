@@ -6,6 +6,16 @@ Dativity is a stateless, data driven process engine library for Clojure and Cloj
 
 It is inspired by the [Artifact centric business process model.](https://en.wikipedia.org/wiki/Artifact-centric_business_process_model#cite_note-VAN2005-6)
 
+##### Table of Contents  
+[Motivation](#motivation)  
+[Design](#design)  
+[Features](#features)  
+[Examples](#examples)  
+[Dependencies](#dependencies)  
+[License](#license)  
+
+<a name="motivation"/>
+
 ## Motivation 
 
 Conventional process engines (like [Activiti](https://www.activiti.org/)) are centered around activities and the sequence in which they should be performed according to design.
@@ -17,6 +27,8 @@ For example, you cannot accept or deny an insurance claim before it has been sub
 
 Process software should not keep its own state. The value the software is providing should be accessed through a pure function of two things: a static process-model, and a process instance consisting of data that evolves throughout the instance of the process as information is gathered.
 
+<a name="design"/>
+
 ## Design
 
 Dativity models a process into three different entities:
@@ -27,14 +39,19 @@ Dativity models a process into three different entities:
 The above entites relate in the following ways:
 * Data (green) can be _required_ by an action
 * An action (purple) _produces_ data
-* R role (yellow) _performs_ an action
+* A Role (yellow) _performs_ an action
 
 
 ![](dativity.png)
 _a simple credit application process_
 
 In the above example, the action 'create case' produces the data 'case id' and 'customer-id'. When those pieces of information have been added to the case, 'enter-loan-details' can be performed because it only depends on 'case-id' to be present.
-## Abilities
+
+<a name="features"/>
+
+## Features
+
+#### Basic functionality
 Given a process definition and a set of collected data, Dativity can answer questions like:
 * What actions can be performed next?
 * What actions can be performed by role X (user, system, officer...)
@@ -42,10 +59,14 @@ Given a process definition and a set of collected data, Dativity can answer ques
 * Is action X allowed?
 * What data is required for action X?
 
-##### Invalidating
+#### Invalidating 
 Sometimes a user goes has to go back and change data. 
 Then all subsequent (in the sense that the changed data is required by other actions) actions need to be invalidated.
 Dativity has support for this type of scenario, where the case is 'rewinded' to the action that was re-done. Previously entered data is kept, but 'uncommitted', and depending actions need to be performed again.
+
+#### Conditional requirements
+
+<a name="examples"/>
 
 ## Examples  
 
@@ -217,16 +238,18 @@ To say that applications for loans of more than 300 000 require signatures from 
                                                   :loan-details)))
 ```
 
-## Usage
+<a name="dependencies"/>
 
+## Dependencies
 To generate graph pictures, install [graphviz](https://graphviz.gitlab.io/download/):
 
 `brew install graphviz`
 
-## Dependencies
 The core functionality of Dativity only depends on Clojure.
 
 [Ubergraph](https://github.com/Engelberg/ubergraph) is used as an adapter to graphviz for vizualisation and is only used by a utility namespace.
+
+<a name="license"/>
 
 ## License
 

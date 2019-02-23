@@ -1,8 +1,8 @@
 (ns dativity.core-test
   (:require #?(:clj [clojure.test :refer :all]
                :cljs [cljs.test :refer-macros [is]])
-            [dativity.core :as c]
-            [dativity.define :as d]))
+                    [dativity.core :as c]
+                    [dativity.define :as d]))
 
 (defn printreturn [x] (clojure.pprint/pprint x) x)
 
