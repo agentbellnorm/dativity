@@ -16,6 +16,7 @@
                           :undirected?      false
                           :undirected-edges []})))
 
+;layouts that make sense are :fdp and :dot
 (defn generate-png
   [graph]
-  (uber/viz-graph (to-uber graph)))
+  (uber/viz-graph (to-uber graph) {:layout :dot}))

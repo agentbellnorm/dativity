@@ -1,9 +1,9 @@
 (ns dativity.core
-  (:require #?(:clj [clojure.test :refer :all]
+  (:require #?(:clj  [clojure.test :refer :all]
                :cljs [cljs.test :refer-macros [is]])
-                    [dativity.define :as define]
-                    [dativity.graph :as graph]
-                    [clojure.set :refer [union intersection difference]]))
+            [dativity.define :as define]
+            [dativity.graph :as graph]
+            [clojure.set :refer [union intersection difference]]))
 
 ; Not needed in the public api. maybe not in the private either?
 (defn- get-data-from-case
@@ -91,14 +91,26 @@
        (set)))
 
 (defn case-has-data?
-  "Returns true if the given data node exists regardless if it is committed or not."
+  "Returns true if the given data node exists regardless if it is committed or not.
+   Treats values that are empty collections as not having data"
   {:test (fn []
-           (is (case-has-data? {:a {:committed true :value "hejhopp"}} :a))
-           (is (case-has-data? {:a {:committed false :value "hejhopp"}} :a))
-           (is (case-has-data? {:a {:committed false :value nil}} :a))
-           (is (not (case-has-data? {} :a))))}
+           (is (not (case-has-data? {:a nil} :a)))
+           (is (not (case-has-data? {:a {}} :a)))
+           (is (not (case-has-data? {:a #{}} :a)))
+           (is (not (case-has-data? {:a []} :a)))
+           (is (not (case-has-data? {} :a)))
+           (is (case-has-data? {:a "hej"} :a))
+           (is (case-has-data? {:a 123} :a))
+           (is (case-has-data? {:a [1 2 3]} :a))
+           (is (case-has-data? {:a #{"a" "b" "c"}} :a))
+           (is (case-has-data? {:a {:marco "polo"}} :a))
+           (is (case-has-data? {:a true} :a))
+           (is (case-has-data? {:a false} :a)))}
   [case data-key]
-  (not (nil? (data-key case))))
+  (or
+    (number? (data-key case))
+    (boolean? (data-key case))
+    (not-empty (data-key case))))
 
 (defn has-committed-data?
   "Returns true if the given data node exists and is committed"
@@ -291,7 +303,7 @@
                      :default acc)))
                #{})))
 
-(defn next-actions
+(defn next-actions ;TODO Docstring!
   ([process-definition case] (difference (actions-with-prereqs-present process-definition case) (actions-performed process-definition case)))
   ([process-definition case role] (intersection (next-actions process-definition case) (actions-performed-by-role process-definition role))))
 

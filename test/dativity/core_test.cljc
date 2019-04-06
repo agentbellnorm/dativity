@@ -95,7 +95,7 @@
       (d/add-relationship-to-model (d/role-performs :system :calculate-amortization))
       (d/add-relationship-to-model (d/role-performs :applicant :sign-credit-application-document))))
 
-(comment (visualize/generate-png case-graph))
+(comment (dativity.visualize/generate-png case-graph))
 
 (deftest actions-it
   (testing "runs a case through the whole flow and makes
