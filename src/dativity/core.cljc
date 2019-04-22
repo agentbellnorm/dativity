@@ -91,26 +91,29 @@
        (set)))
 
 (defn case-has-data?
-  "Returns true if the given data node exists regardless if it is committed or not.
-   Treats values that are empty collections as not having data"
+  "Returns truthy if the given data node exists regardless if it is committed or not.
+   Treats values that are empty seqables as not having data"
   {:test (fn []
-           (is (not (case-has-data? {:a nil} :a)))
            (is (not (case-has-data? {:a {}} :a)))
            (is (not (case-has-data? {:a #{}} :a)))
            (is (not (case-has-data? {:a []} :a)))
+           (is (not (case-has-data? {:a ""} :a)))
+           (is (not (case-has-data? {:a nil} :a)))
            (is (not (case-has-data? {} :a)))
            (is (case-has-data? {:a "hej"} :a))
            (is (case-has-data? {:a 123} :a))
+           (is (case-has-data? {:a 0} :a))
            (is (case-has-data? {:a [1 2 3]} :a))
            (is (case-has-data? {:a #{"a" "b" "c"}} :a))
            (is (case-has-data? {:a {:marco "polo"}} :a))
+           (is (case-has-data? {:a {:marco nil}} :a))
            (is (case-has-data? {:a true} :a))
            (is (case-has-data? {:a false} :a)))}
   [case data-key]
-  (or
-    (number? (data-key case))
-    (boolean? (data-key case))
-    (not-empty (data-key case))))
+  (let [value (data-key case)]
+    (if (seqable? value)
+      (not-empty value)
+      (some? value))))
 
 (defn has-committed-data?
   "Returns true if the given data node exists and is committed"
@@ -123,15 +126,15 @@
                                      :a                "hejhopp"
                                      :b                "yoloswag"}
                                     :b))
-           (is (false? (has-committed-data? {:dativity/commits {:a false :b true}
-                                             :a                "hejhopp"
-                                             :b                "yoloswag"}
-                                            :a)))
-           (is (false? (has-committed-data? {:dativity/commits {:b true}
-                                             :b                "yoloswag"}
-                                            :a))))}
+           (is (not (has-committed-data? {:dativity/commits {:a false :b true}
+                                          :a                "hejhopp"
+                                          :b                "yoloswag"}
+                                         :a)))
+           (is (not (has-committed-data? {:dativity/commits {:b true}
+                                          :b                "yoloswag"}
+                                         :a))))}
   [case data-key]
-  (and (not (nil? (data-key case)))
+  (and (case-has-data? case data-key)
        (get-in case [:dativity/commits data-key])))
 
 (defn case-has-uncommitted-data?
@@ -143,7 +146,8 @@
            (is (not (case-has-uncommitted-data? {} :a)))
            )}
   [case data-key]
-  (and (case-has-data? case data-key) (not (has-committed-data? case data-key))))
+  (and (case-has-data? case data-key)
+       (not (has-committed-data? case data-key))))
 
 (defn- get-conditionally-required-data-nodes-for-action
   {:test (fn []
@@ -167,11 +171,11 @@
                        dest (:dest conditional-requirement)
                        condition (graph/attr process-definition src dest :condition)
                        parameter (graph/attr process-definition src dest :data-parameter)]
-                   (if (not (nil? (get-data-from-case case parameter)))
+                   (if (case-has-data? case parameter)
                      (condition (get-data-from-case case parameter))
                      false))
                  ))
-       (map (fn [edge] (:dest edge)))
+       (map :dest)
        (set)))
 
 (defn data-prereqs-for-action                               ;; depends on case to determine conditional requirements
@@ -188,7 +192,7 @@
   [process-definition case action]
   (->> (graph/find-edges process-definition {:src         action
                                              :association :requires})
-       (map (fn [edge] (:dest edge)))
+       (map :dest)
        (set)
        (union (get-conditionally-required-data-nodes-for-action process-definition case action))))
 
@@ -201,7 +205,7 @@
   [process-definition action]
   (->> (graph/find-edges process-definition {:src         action
                                              :association :produces})
-       (map (fn [edge] (:dest edge)))
+       (map :dest)
        (set)))
 
 (defn actions-performed-by-role
@@ -209,7 +213,7 @@
   [process-definition role]
   (->> (graph/find-edges process-definition {:src         role
                                              :association :performs})
-       (map (fn [edge] (:dest edge)))
+       (map :dest)
        (set)))
 
 (defn actions-that-require-data
@@ -220,7 +224,7 @@
   [process-definition data]
   (->> (graph/find-edges process-definition {:dest        data
                                              :association :requires})
-       (map (fn [edge] (:src edge)))
+       (map :src)
        (set)))
 
 (defn- actions-that-can-be-performed-after-action
@@ -241,7 +245,7 @@
                    (has-committed-data? :b)))
            (is (= (uncommit-data {} :a) {})))}
   [case key]
-  (if (contains? case key)
+  (if (case-has-data? case key)
     (assoc-in case [:dativity/commits key] false)
     case))
 
@@ -303,9 +307,15 @@
                      :default acc)))
                #{})))
 
-(defn next-actions ;TODO Docstring!
-  ([process-definition case] (difference (actions-with-prereqs-present process-definition case) (actions-performed process-definition case)))
-  ([process-definition case role] (intersection (next-actions process-definition case) (actions-performed-by-role process-definition role))))
+(defn next-actions
+  "Returns a set of actions that are allowed to perform and are also not yet performed.
+  If a role is provided then only actions that are performed by that role are returned"
+  ([process-definition case]
+   (difference (actions-with-prereqs-present process-definition case)
+               (actions-performed process-definition case)))
+  ([process-definition case role]
+   (intersection (next-actions process-definition case)
+                 (actions-performed-by-role process-definition role))))
 
 (defn action-allowed?
   "Returns true if the given action has all data dependencies satisfied, otherwise false."
@@ -337,10 +347,10 @@
   [process-definition case action]
   (loop [loop-case case
          [data & datas] (vec (data-produced-by-action process-definition action))]
-    (if-not data
-      loop-case
+    (if data
       (recur (uncommit-data loop-case data)
-             datas))))
+             datas)
+      loop-case)))
 
 (defn invalidate-action
   "Uncommits the data produced by the specified action, and then recursively performs
@@ -379,9 +389,9 @@
   (loop [loop-case case
          [loop-action & loop-actions] [action]
          seen-actions #{}]
-    (if (nil? loop-action)
-      loop-case
+    (if loop-action
       (recur (uncommit-datas-produced-by-action process-definition loop-case loop-action)
              (vec (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-action) loop-actions)) seen-actions))
-             (conj seen-actions loop-action)))))
+             (conj seen-actions loop-action))
+      loop-case)))
 

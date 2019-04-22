@@ -18,5 +18,6 @@
 
 ;layouts that make sense are :fdp and :dot
 (defn generate-png
+  "requires graphviz"
   [graph]
   (uber/viz-graph (to-uber graph) {:layout :dot}))

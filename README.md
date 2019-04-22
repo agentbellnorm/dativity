@@ -21,11 +21,13 @@ It is inspired by the [Artifact centric business process model.](https://en.wiki
 Conventional process engines (like [Activiti](https://www.activiti.org/)) are centered around activities and the sequence in which they should be performed according to design.
 
 The key idea of Dativity is to not say in what sequence actions in a process _should_ be performed. 
-But rather what actions are _possible_ to do given how actions depend on collected information. 
+But rather what actions are _possible_ to do given how actions depend on information. 
 
 For example, you cannot accept or deny an insurance claim before it has been submitted - it can be reviewed precisely after it has been submitted.
 
 Process software should not keep its own state. The value the software is providing should be accessed through a pure function of two things: a static process-model, and a process instance consisting of data that evolves throughout the instance of the process as information is gathered.
+
+[This blog post](https://morganbentell.wordpress.com/2019/03/18/dativity-the-stateless-process-engine/) offers a more extensive motivation.
 
 <a name="design"/>
 
