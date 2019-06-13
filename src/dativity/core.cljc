@@ -13,7 +13,7 @@
   [case key]
   (key case))
 
-(defn test-process
+(defn- test-process
   "test graph for unit testing purposes, does not make sense really, but is simple."
   []
   (-> (define/empty-case-model)
@@ -319,30 +319,30 @@
 (defn action-allowed?
   "Returns true if the given action has all data dependencies satisfied, otherwise false."
   {:test (fn []
-           (is (false? (action-allowed? (test-process) {} :a)))
-           (is (false? (action-allowed? (test-process) {:e "yeah"} :a)))
-           (is (true? (action-allowed? (test-process) (-> {}
-                                                          (add-data :b {:power-level 9001})
-                                                          (add-data :e "yeah")) :a)))
-           (is (true? (action-allowed? (test-process) (add-data {} :e "yeah") :d)))
-           (is (false? (action-allowed? (test-process) (add-data {} :c "yeah") :d)))
-           (is (false? (action-allowed? (test-process) (-> {}
-                                                           (add-data :a "lol")
-                                                           (add-data :b {:power-level 9001})
-                                                           (add-data :c "yeah")) :d))))}
+           (is-not (action-allowed? (test-process) {} :a))
+           (is-not (action-allowed? (test-process) {:e "yeah"} :a))
+           (is (action-allowed? (test-process) (-> {}
+                                                   (add-data :b {:power-level 9001})
+                                                   (add-data :e "yeah")) :a))
+           (is (action-allowed? (test-process) (add-data {} :e "yeah") :d))
+           (is-not (action-allowed? (test-process) (add-data {} :c "yeah") :d))
+           (is-not (action-allowed? (test-process) (-> {}
+                                                       (add-data :a "lol")
+                                                       (add-data :b {:power-level 9001})
+                                                       (add-data :c "yeah")) :d)))}
   [process-definition case action]
   (contains? (actions-with-prereqs-present process-definition case) action))
 
 (defn- uncommit-datas-produced-by-action
   "uncommits all data nodes that have a production edge from the specified action node"
   {:test (fn []
-           (is (true? (as-> {} case
-                            (add-data case :e "ey")
-                            (add-data case :h "kolasås")
-                            (add-data case :a "sås")
-                            (uncommit-datas-produced-by-action (test-process) case :g)
-                            (every? false? [(has-committed-data? case :e)
-                                            (has-committed-data? case :h)])))))}
+           (is (as-> {} case
+                     (add-data case :e "ey")
+                     (add-data case :h "kolasås")
+                     (add-data case :a "sås")
+                     (uncommit-datas-produced-by-action (test-process) case :g)
+                     (every? false? [(has-committed-data? case :e)
+                                     (has-committed-data? case :h)]))))}
   [process-definition case action]
   (loop [loop-case case
          [data & datas] (vec (data-produced-by-action process-definition action))]
@@ -370,10 +370,10 @@
                  (add-data case :h "fuego")
                  (invalidate-action (test-process) case :g)
                  (do
-                   (is (false? (has-committed-data? case :c)))
-                   (is (false? (has-committed-data? case :e)))
-                   (is (false? (has-committed-data? case :a)))
-                   (is (false? (has-committed-data? case :h)))))
+                   (is-not (has-committed-data? case :c))
+                   (is-not (has-committed-data? case :e))
+                   (is-not (has-committed-data? case :a))
+                   (is-not (has-committed-data? case :h))))
            (as-> {} case
                  (add-data case :c "far out")
                  (add-data case :e "yoloswaggins")

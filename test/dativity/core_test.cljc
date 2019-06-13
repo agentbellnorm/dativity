@@ -137,7 +137,7 @@
                                                     :add-collateral-valuation
                                                     :add-economy
                                                     :know-your-customer})
-            (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
+            (is-not (c/action-allowed? case-graph case :create-collateral-link)) case)
           (c/add-data case :economy {:income   500000
                                      :children 2})
           (c/add-data case :customer-info {:name "Carl-Jan Granqvist"
@@ -188,7 +188,7 @@
                                                     :get-currently-owned-real-estate
                                                     :add-collateral-valuation
                                                     :add-economy})
-            (is (false? (c/action-allowed? case-graph case :create-collateral-link))) case)
+            (is-not (c/action-allowed? case-graph case :create-collateral-link)) case)
           (c/add-data case :currently-owned-real-estate {:address "Bägersta Byväg 17"})
           (do (is= (c/actions-performed case-graph case) #{:create-case
                                                            :add-loan-details
