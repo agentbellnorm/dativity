@@ -207,7 +207,7 @@
        (map :dest)
        (set)))
 
-(defn actions-performed-by-role
+(defn actions-allowed-by-role
   "Returns all actions that a role performs."
   [process-definition role]
   (->> (graph/find-edges process-definition {:src         role
@@ -314,7 +314,7 @@
                (actions-performed process-definition case)))
   ([process-definition case role]
    (intersection (next-actions process-definition case)
-                 (actions-performed-by-role process-definition role))))
+                 (actions-allowed-by-role process-definition role))))
 
 (defn action-allowed?
   "Returns true if the given action has all data dependencies satisfied, otherwise false."
