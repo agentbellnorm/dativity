@@ -207,6 +207,19 @@
        (map :dest)
        (set)))
 
+(defn action-producing-data
+  "Returns the action that produce the given data."
+  {:test (fn []
+           (is= (action-producing-data (test-process) :a) :d)
+           (is= (action-producing-data (test-process) :c) :f)
+           (is= (action-producing-data (test-process) :e) :g)
+           (is= (action-producing-data (test-process) :h) :g))}
+  [process-definition data]
+  (->> (graph/find-edges process-definition {:dest        data
+                                             :association :produces})
+       (map :src)
+       (first)))
+
 (defn actions-allowed-by-role
   "Returns all actions that a role performs."
   [process-definition role]
@@ -353,7 +366,8 @@
 
 (defn invalidate-action
   "Uncommits the data produced by the specified action, and then recursively performs
-  the same procedure on all actions that require the data produced by the specified action."
+  the same procedure on all actions that require the data produced by the specified action.
+  The use case of this function itself is not clear, invalidate-data should be used instead."
   {:test (fn []
            (as-> {} case
                  (add-data case :c "far out")
@@ -393,4 +407,11 @@
              (vec (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-action) loop-actions)) seen-actions))
              (conj seen-actions loop-action))
       loop-case)))
+
+(defn invalidate-data
+  "Uncommits a given data node, and recursively uncommits all data that was produced
+  by actions that require the given data node"
+  [process-definition case data]
+  (invalidate-action process-definition case (action-producing-data process-definition data)))
+
 
