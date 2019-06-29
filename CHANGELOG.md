@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This change
 ### Changed
 - Empty seqs are now treated as 'no data'.
 - The function `dativity.core/actions-performed-by-role` was renamed to `core/actions-allowed-by-role`
+- Colors and labels are added to the graph in `dativity.visualize` namespace instead of `dativity.define`
 - Using yseras test macros
 - Clojure 1.10.1 is used
 - ClojureScript 1.10.520 is used
