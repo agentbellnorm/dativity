@@ -16,7 +16,7 @@
 (defn- test-process
   "test graph for unit testing purposes, does not make sense really, but is simple."
   []
-  (-> (define/empty-case-model)
+  (-> (define/empty-process-model)
       (define/add-entity-to-model (define/action :a))
       (define/add-entity-to-model (define/action :d))
       (define/add-entity-to-model (define/action :f))
@@ -40,6 +40,7 @@
       (define/add-relationship-to-model (define/action-produces :g :h))
       (define/add-relationship-to-model (define/role-performs :a :c))
       (define/add-relationship-to-model (define/role-performs :c :d))))
+(test-process)
 
 (comment (dativity.visualize/generate-png (test-process)))
 

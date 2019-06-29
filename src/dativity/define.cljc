@@ -2,7 +2,7 @@
   (:require [ysera.test :refer [is=]]
             [dativity.graph :as graph]))
 
-(defn empty-case-model
+(defn empty-process-model
   []
   (graph/empty-graph))
 
@@ -39,16 +39,16 @@
 
 (defn add-entity-to-model
   {:test (fn []
-           (is= 2 (-> (empty-case-model)
+           (is= 2 (-> (empty-process-model)
                       (add-entity-to-model (action :add-customer-information))
                       (add-entity-to-model (action :add-phone-number))
                       (graph/count-nodes))))}
-  [case node]
-  (graph/add-node-with-attrs case node))
+  [model node]
+  (graph/add-node-with-attrs model node))
 
 (defn add-relationship-to-model
   {:test (fn []
-           (let [graph (-> (empty-case-model)
+           (let [graph (-> (empty-process-model)
                            (add-entity-to-model (action :thing-to-do))
                            (add-entity-to-model (data :thing-to-know))
                            (add-relationship-to-model (action-produces :thing-to-do :thing-to-know)))]

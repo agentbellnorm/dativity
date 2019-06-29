@@ -27,7 +27,7 @@
 ;; define case model with actions, data, roles and relationships
 
 (def case-model
-  (-> (d/empty-case-model)
+  (-> (d/empty-process-model)
       ; Actions
       (d/add-entity-to-model (d/action :create-case))
       (d/add-entity-to-model (d/action :enter-loan-details))
@@ -304,8 +304,7 @@
 ;; that they changed the loan-detail data.
 
 (swap! case-atom (fn [case]
-                   (c/invalidate-action case-model case :enter-loan-details)))
-
+                   (c/invalidate-data case-model case :loan-details)))
 
 
 

@@ -8,7 +8,7 @@
 (defn printreturn [x] (clojure.pprint/pprint x) x)
 
 (def case-graph
-  (-> (d/empty-case-model)
+  (-> (d/empty-process-model)
       ; Actions
       (d/add-entity-to-model (d/action :create-case))
       (d/add-entity-to-model (d/action :consent-to-personal-data-retrieval-and-storage))
