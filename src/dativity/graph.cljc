@@ -1,11 +1,10 @@
 (ns dativity.graph
-  (:require #?(:clj  [clojure.test :refer :all]
-               :cljs [cljs.test :refer-macros [is]])
-    [clojure.set :refer [subset?]]))
+  (:require [clojure.set :refer [subset?]]
+            [ysera.test :refer [is is=]]))
 
 (defn empty-graph
   []
-  {:nodes {} :edges {}})
+  {::nodes {} ::edges {}})
 
 
 (defn add-node-with-attrs
@@ -14,32 +13,32 @@
                    (add-node-with-attrs [:node {:color "green"}])
                    (add-node-with-attrs [:node2 {:color "blue"}]))))}
   [graph [name attributes]]
-  (assoc-in graph [:nodes name] attributes))
+  (assoc-in graph [::nodes name] attributes))
 
 (defn add-directed-edge
   {:test (fn []
-           (is (= {[:node :node2] {:color "yellow"
-                                   :src   :node
-                                   :dest  :node2}}
-                  (-> (empty-graph)
-                      (add-node-with-attrs [:node {:color "green"}])
-                      (add-node-with-attrs [:node2 {:color "blue"}])
-                      (add-directed-edge [:node :node2 {:color "yellow"}])
-                      (:edges)))))}
+           (is= {[:node :node2] {:color "yellow"
+                                 :src   :node
+                                 :dest  :node2}}
+                (-> (empty-graph)
+                    (add-node-with-attrs [:node {:color "green"}])
+                    (add-node-with-attrs [:node2 {:color "blue"}])
+                    (add-directed-edge [:node :node2 {:color "yellow"}])
+                    (::edges))))}
   [graph [src dst attributes]]
-  (assoc-in graph [:edges [src dst]] (assoc attributes :src src :dest dst)))
+  (assoc-in graph [::edges [src dst]] (assoc attributes :src src :dest dst)))
 
 
 (defn nodes
   {:test (fn []
-           (is (= #{:node :node2} (-> (empty-graph)
-                                      (add-node-with-attrs [:node {:color "green"}])
-                                      (add-node-with-attrs [:node2 {:color "blue"}])
-                                      (add-directed-edge [:node :node2 {:color "yellow"}])
-                                      (nodes)
-                                      (set)))))}
+           (is= #{:node :node2} (-> (empty-graph)
+                                    (add-node-with-attrs [:node {:color "green"}])
+                                    (add-node-with-attrs [:node2 {:color "blue"}])
+                                    (add-directed-edge [:node :node2 {:color "yellow"}])
+                                    (nodes)
+                                    (set))))}
   [graph]
-  (keys (:nodes graph)))
+  (keys (::nodes graph)))
 
 (defn attr
   {:test (fn []
@@ -51,8 +50,8 @@
                                (add-node-with-attrs [:node {:color "green"}])
                                (add-directed-edge [:node :node2 {:color "yellow"}])
                                (attr :node :node2 :color)))))}
-  ([graph node attr-key] (get-in graph [:nodes node attr-key]))
-  ([graph src dst attr-key] (get-in graph [:edges [src dst] attr-key])))
+  ([graph node attr-key] (get-in graph [::nodes node attr-key]))
+  ([graph src dst attr-key] (get-in graph [::edges [src dst] attr-key])))
 
 (defn count-nodes
   {:test (fn []
@@ -62,7 +61,7 @@
                         (add-directed-edge [:node :node2 {:color "yellow"}])
                         count-nodes))))}
   [graph]
-  (count (keys (:nodes graph))))
+  (count (keys (::nodes graph))))
 
 (defn count-edges
   {:test (fn []
@@ -72,7 +71,7 @@
                         (add-directed-edge [:node :node2 {:color "yellow"}])
                         count-edges))))}
   [graph]
-  (count (keys (:edges graph))))
+  (count (keys (::edges graph))))
 
 (defn find-edges
   {:test (fn []
@@ -134,7 +133,7 @@
                       (find-edges {:src   :node
                                    :color "green"})))))}
   [graph attr-query]
-  (->> (:edges graph)
+  (->> (::edges graph)
        (filter (fn [[_ edge-attributes]]
                  (subset? (set attr-query) (set edge-attributes))))
        (map val)))

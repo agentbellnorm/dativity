@@ -5,96 +5,89 @@
     [dativity.core :as c]
     [dativity.define :as d]))
 
-(defn printreturn [x] (clojure.pprint/pprint x) x)
-
 (def case-graph
-  (-> (d/empty-process-model)
-      ; Actions
-      (d/add-entity-to-model (d/action :create-case))
-      (d/add-entity-to-model (d/action :consent-to-personal-data-retrieval-and-storage))
-      (d/add-entity-to-model (d/action :fetch-supplimentary-info))
-      (d/add-entity-to-model (d/action :know-your-customer))
-      (d/add-entity-to-model (d/action :add-economy))
-      (d/add-entity-to-model (d/action :get-currently-owned-real-estate))
-      (d/add-entity-to-model (d/action :add-loan-details))
-      (d/add-entity-to-model (d/action :add-collateral-valuation))
-      (d/add-entity-to-model (d/action :add-collateral))
-      (d/add-entity-to-model (d/action :create-collateral-link))
-      (d/add-entity-to-model (d/action :calculate-amortization))
-      (d/add-entity-to-model (d/action :produce-credit-application-document))
-      (d/add-entity-to-model (d/action :sign-credit-application-document))
-      ; Data entities
-      (d/add-entity-to-model (d/data :case-id))
-      (d/add-entity-to-model (d/data :customer-id))
-      (d/add-entity-to-model (d/data :customer-info))
-      (d/add-entity-to-model (d/data :consent))
-      (d/add-entity-to-model (d/data :know-your-customer-data))
-      (d/add-entity-to-model (d/data :economy))
-      (d/add-entity-to-model (d/data :currently-owned-real-estate))
-      (d/add-entity-to-model (d/data :loan-details))
-      (d/add-entity-to-model (d/data :collateral))
-      (d/add-entity-to-model (d/data :collateral-valuation))
-      (d/add-entity-to-model (d/data :collateral-link))
-      (d/add-entity-to-model (d/data :amortization))
-      (d/add-entity-to-model (d/data :credit-application-reference))
-      (d/add-entity-to-model (d/data :credit-application-signature))
-      ; Roles
-      (d/add-entity-to-model (d/role :applicant))
-      (d/add-entity-to-model (d/role :system))
-      (d/add-entity-to-model (d/role :officer))
-      ; Production edges
-      (d/add-relationship-to-model (d/action-produces :create-case :customer-id))
-      (d/add-relationship-to-model (d/action-produces :create-case :case-id))
-      (d/add-relationship-to-model (d/action-produces :consent-to-personal-data-retrieval-and-storage :consent))
-      (d/add-relationship-to-model (d/action-produces :fetch-supplimentary-info :customer-info))
-      (d/add-relationship-to-model (d/action-produces :know-your-customer :know-your-customer-data))
-      (d/add-relationship-to-model (d/action-produces :add-economy :economy))
-      (d/add-relationship-to-model (d/action-produces :get-currently-owned-real-estate :currently-owned-real-estate))
-      (d/add-relationship-to-model (d/action-produces :add-loan-details :loan-details))
-      (d/add-relationship-to-model (d/action-produces :add-collateral :collateral))
-      (d/add-relationship-to-model (d/action-produces :add-collateral-valuation :collateral-valuation))
-      (d/add-relationship-to-model (d/action-produces :create-collateral-link :collateral-link))
-      (d/add-relationship-to-model (d/action-produces :calculate-amortization :amortization))
-      (d/add-relationship-to-model (d/action-produces :produce-credit-application-document :credit-application-reference))
-      (d/add-relationship-to-model (d/action-produces :sign-credit-application-document :credit-application-signature))
-      ; Prerequisite edges
-      (d/add-relationship-to-model (d/action-requires :consent-to-personal-data-retrieval-and-storage :customer-id))
-      (d/add-relationship-to-model (d/action-requires :fetch-supplimentary-info :consent))
-      (d/add-relationship-to-model (d/action-requires :know-your-customer :consent))
-      (d/add-relationship-to-model (d/action-requires :add-economy :customer-id))
-      (d/add-relationship-to-model (d/action-requires :get-currently-owned-real-estate :consent))
-      (d/add-relationship-to-model (d/action-requires :add-loan-details :case-id))
-      (d/add-relationship-to-model (d/action-requires :add-collateral :case-id))
-      (d/add-relationship-to-model (d/action-requires :add-collateral-valuation :collateral))
-      (d/add-relationship-to-model (d/action-requires-conditional
-                                     :create-collateral-link
-                                     :collateral-valuation
-                                     (fn [loan-details] (> (:amount loan-details) 2000000))
-                                     :loan-details))
-      (d/add-relationship-to-model (d/action-requires :create-collateral-link :currently-owned-real-estate))
-      (d/add-relationship-to-model (d/action-requires :create-collateral-link :loan-details))
-      (d/add-relationship-to-model (d/action-requires :create-collateral-link :collateral))
-      (d/add-relationship-to-model (d/action-requires :calculate-amortization :economy))
-      (d/add-relationship-to-model (d/action-requires :calculate-amortization :collateral-link))
-      (d/add-relationship-to-model (d/action-requires :produce-credit-application-document :customer-info))
-      (d/add-relationship-to-model (d/action-requires :produce-credit-application-document :loan-details))
-      (d/add-relationship-to-model (d/action-requires :produce-credit-application-document :amortization))
-      (d/add-relationship-to-model (d/action-requires :produce-credit-application-document :currently-owned-real-estate))
-      (d/add-relationship-to-model (d/action-requires :produce-credit-application-document :collateral))
-      (d/add-relationship-to-model (d/action-requires :produce-credit-application-document :collateral-link))
-      (d/add-relationship-to-model (d/action-requires :sign-credit-application-document :credit-application-reference))
-      ; Role-action edges
-      (d/add-relationship-to-model (d/role-performs :applicant :create-case))
-      (d/add-relationship-to-model (d/role-performs :applicant :consent-to-personal-data-retrieval-and-storage))
-      (d/add-relationship-to-model (d/role-performs :system :fetch-supplimentary-info))
-      (d/add-relationship-to-model (d/role-performs :system :know-your-customer))
-      (d/add-relationship-to-model (d/role-performs :applicant :add-economy))
-      (d/add-relationship-to-model (d/role-performs :system :get-currently-owned-real-estate))
-      (d/add-relationship-to-model (d/role-performs :applicant :add-loan-details))
-      (d/add-relationship-to-model (d/role-performs :applicant :add-collateral))
-      (d/add-relationship-to-model (d/role-performs :applicant :create-collateral-link))
-      (d/add-relationship-to-model (d/role-performs :system :calculate-amortization))
-      (d/add-relationship-to-model (d/role-performs :applicant :sign-credit-application-document))))
+  (d/create-model
+    {:actions                     [:create-case
+                                   :consent-to-personal-data-retrieval-and-storage
+                                   :fetch-supplimentary-info
+                                   :know-your-customer
+                                   :add-economy
+                                   :get-currently-owned-real-estate
+                                   :add-loan-details
+                                   :add-collateral-valuation
+                                   :add-collateral
+                                   :create-collateral-link
+                                   :calculate-amortization
+                                   :produce-credit-application-document
+                                   :sign-credit-application-document]
+     :data                        [:case-id
+                                   :customer-id
+                                   :customer-info
+                                   :consent
+                                   :know-your-customer-data
+                                   :economy
+                                   :currently-owned-real-estate
+                                   :loan-details
+                                   :collateral
+                                   :collateral-valuation
+                                   :collateral-link
+                                   :amortization
+                                   :credit-application-reference
+                                   :credit-application-signature]
+     :roles                       [:applicant
+                                   :system
+                                   :officer]
+     :action-produces             [[:add-collateral :collateral]
+                                   [:add-collateral-valuation :collateral-valuation]
+                                   [:add-economy :economy]
+                                   [:add-loan-details :loan-details]
+                                   [:calculate-amortization :amortization]
+                                   [:consent-to-personal-data-retrieval-and-storage :consent]
+                                   [:create-case :case-id]
+                                   [:create-case :customer-id]
+                                   [:create-collateral-link :collateral-link]
+                                   [:fetch-supplimentary-info :customer-info]
+                                   [:get-currently-owned-real-estate :currently-owned-real-estate]
+                                   [:know-your-customer :know-your-customer-data]
+                                   [:produce-credit-application-document :credit-application-reference]
+                                   [:sign-credit-application-document :credit-application-signature]]
+     :action-requires             [[:add-collateral :case-id]
+                                   [:add-collateral-valuation :collateral]
+                                   [:add-economy :customer-id]
+                                   [:add-loan-details :case-id]
+                                   [:calculate-amortization :collateral-link]
+                                   [:calculate-amortization :economy]
+                                   [:consent-to-personal-data-retrieval-and-storage :customer-id]
+                                   [:create-collateral-link :collateral]
+                                   [:create-collateral-link :currently-owned-real-estate]
+                                   [:create-collateral-link :loan-details]
+                                   [:fetch-supplimentary-info :consent]
+                                   [:get-currently-owned-real-estate :consent]
+                                   [:know-your-customer :consent]
+                                   [:produce-credit-application-document :amortization]
+                                   [:produce-credit-application-document :collateral-link]
+                                   [:produce-credit-application-document :collateral]
+                                   [:produce-credit-application-document :currently-owned-real-estate]
+                                   [:produce-credit-application-document :customer-info]
+                                   [:produce-credit-application-document :loan-details]
+                                   [:sign-credit-application-document :credit-application-reference]]
+     :role-performs               [[:applicant :add-collateral]
+                                   [:applicant :add-economy]
+                                   [:applicant :add-loan-details]
+                                   [:applicant :consent-to-personal-data-retrieval-and-storage]
+                                   [:applicant :create-case]
+                                   [:applicant :create-collateral-link]
+                                   [:applicant :sign-credit-application-document]
+                                   [:system :calculate-amortization]
+                                   [:system :fetch-supplimentary-info]
+                                   [:system :get-currently-owned-real-estate]
+                                   [:system :know-your-customer]]
+     :action-requires-conditional [{:action             :create-collateral-link
+                                    :requires           :collateral-valuation
+                                    :condition          (fn [loan-details] (> (:amount loan-details) 2000000))
+                                    :condition-argument :loan-details}]}))
+
+(clojure.pprint/pprint case-graph)
 
 (comment (dativity.visualize/generate-png case-graph))
 
@@ -262,7 +255,7 @@
                                                            :consent-to-personal-data-retrieval-and-storage
                                                            :know-your-customer})
               (is (c/action-allowed? case-graph case :create-collateral-link)) case)
-          (c/invalidate-data case-graph case :consent) ; INVALIDATION!!
+          (c/invalidate-data case-graph case :consent)      ; INVALIDATION!!
           (do
             (is-not (c/action-allowed? case-graph case :fetch-supplimentary-info))
             (is-not (c/action-allowed? case-graph case :know-your-customer))
