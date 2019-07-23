@@ -4,10 +4,6 @@
             [clojure.spec.alpha :as s]
             [dativity.graph :as graph]))
 
-(defn contains-it?
-  [it coll]
-  (some #{it} coll))
-
 (defn empty-process-model
   []
   (graph/empty-graph))
@@ -65,6 +61,10 @@
 
 ;; below is code related to creating the model via create-model.
 
+(defn contains-it?
+  [it coll]
+  (some #{it} coll))
+
 (defn- error-when-missing
   {:test (fn []
            (is (error? (error-when-missing :a [] "error!!")))
@@ -92,7 +92,7 @@
 
   (doseq [{:keys [action requires condition-argument]} action-requires-conditional]
     (let [relationship-string (str "[" action " conditionally requires " requires " depending on " condition-argument "]: ")]
-      (error-when-missing action actions (error "Error when parsing relationship " relationship-string action " is not a defined action"))
+      (error-when-missing action actions (str "Error when parsing relationship " relationship-string action " is not a defined action"))
       (error-when-missing requires data (str "Error when parsing relationship " relationship-string requires " is not a defined data"))
       (error-when-missing condition-argument data (str "Error when parsing relationship " relationship-string condition-argument " is not a defined data"))))
   true)
@@ -162,15 +162,15 @@
                               :role-performs               [[:me :call-dad]
                                                             [:me :call-mom]
                                                             [:me :call-grandma]]})))}
-  [input]
-  {:pre [(validate-spec-and-rules input)]}
-  (let [actions-arg (:actions input)
-        data-arg (:data input)
-        roles-arg (:roles input)
-        action-produces-arg (:action-produces input)
-        action-requires-arg (:action-requires input)
-        action-requires-conditional-arg (:action-requires-conditional input)
-        role-performs-arg (:role-performs input)]
+  [arg-map]
+  {:pre [(validate-spec-and-rules arg-map)]}
+  (let [actions-arg (:actions arg-map)
+        data-arg (:data arg-map)
+        roles-arg (:roles arg-map)
+        action-produces-arg (:action-produces arg-map)
+        action-requires-arg (:action-requires arg-map)
+        action-requires-conditional-arg (:action-requires-conditional arg-map)
+        role-performs-arg (:role-performs arg-map)]
     (as-> (empty-process-model) model
           (reduce (fn [acc input-action]
                     (add-entity-to-model acc (action input-action))) model actions-arg)

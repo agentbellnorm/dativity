@@ -7,7 +7,7 @@
                  [ysera "1.3.0"]
                  [org.clojure/test.check "0.9.0"]
                  [org.clojure/clojurescript "1.10.520"]
-                 [ubergraph "0.5.1"]]
+                 [ubergraph "0.5.3"]]
   :test-paths ["test"]
   :source-paths ["src"]
   :plugins [[lein-cljsbuild "1.1.7"]]

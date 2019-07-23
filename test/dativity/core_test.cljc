@@ -87,8 +87,6 @@
                                     :condition          (fn [loan-details] (> (:amount loan-details) 2000000))
                                     :condition-argument :loan-details}]}))
 
-(clojure.pprint/pprint case-graph)
-
 (comment (dativity.visualize/generate-png case-graph))
 
 (deftest actions-it

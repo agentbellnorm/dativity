@@ -21,20 +21,16 @@
                                                                 :color       :green
                                                                 :label       "produces"}))}
   [edge]
-  (condp = (:association edge)
-    :produces (-> edge
-                  (assoc :color :green)
-                  (assoc :label "produces"))
-    :requires (-> edge
-                  (assoc :color :red)
-                  (assoc :label "requires"))
-    :requires-conditional (-> edge
-                              (assoc :color :purple)
-                              (assoc :label "requires?"))
-    :performs (-> edge
-                  (assoc :color :orange)
-                  (assoc :label "does"))
-    (error (format "could not add visuals to %s" edge))))
+  (merge edge (condp = (:association edge)
+                :produces {:color :green
+                           :label "produces"}
+                :requires {:color :red
+                           :label "requires"}
+                :requires-conditional {:color :purple
+                                       :label "requires?"}
+                :performs {:color :orange
+                           :label "does"}
+                (error (format "could not add visuals to %s" edge)))))
 
 (defn- to-uber
   [graph]
@@ -54,4 +50,4 @@
 (defn generate-png
   "requires graphviz"
   [graph]
-  (uber/viz-graph (to-uber graph) {:layout :fdp}))
+  (uber/viz-graph (to-uber graph) {:layout :dot}))
