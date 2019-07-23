@@ -158,30 +158,3 @@
                                                               :condition          some?
                                                               :condition-argument :tjatte}]})))))
 
-(deftest create-model-happy-flow
-  (testing "a realistic input to create-model"
-    (is (create-model {:actions                     [:call-mom
-                                                     :call-dad
-                                                     :call-grandma]
-
-                       :data                        [:mom-number
-                                                     :mom-info
-                                                     :dad-info]
-
-                       :roles                       [:me]
-
-                       :action-produces             [[:call-mom :mom-info]
-                                                     [:call-dad :dad-info]]
-
-                       :action-requires             [[:call-mom :mom-number]
-                                                     [:call-dad :mom-info]]
-
-                       :action-requires-conditional [{:action             :call-grandma
-                                                      :requires           :dad-info
-                                                      :condition          (fn [mom-info]
-                                                                            (not (:grandma-number mom-info)))
-                                                      :condition-argument :mom-info}]
-
-                       :role-performs               [[:me :call-dad]
-                                                     [:me :call-mom]
-                                                     [:me :call-grandma]]}))))

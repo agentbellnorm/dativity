@@ -1,5 +1,5 @@
 (ns dativity.define
-  (:require [ysera.test :refer [is=]]
+  (:require [ysera.test :refer [is= is is-not error?]]
             [ysera.error :refer [error]]
             [clojure.spec.alpha :as s]
             [dativity.graph :as graph]))
@@ -65,37 +65,36 @@
 
 ;; below is code related to creating the model via create-model.
 
+(defn- error-when-missing
+  {:test (fn []
+           (is (error? (error-when-missing :a [] "error!!")))
+           (is (nil? (error-when-missing :a [:a] "error!!"))))}
+  [needle haystack err-msg]
+  (when-not (contains-it? needle haystack)
+    (error err-msg)))
+
 (defn- validate-relationships
   [{:keys [actions data roles action-produces action-requires action-requires-conditional role-performs]}]
   (doseq [[action produces] action-produces]
     (let [relationship-string (str "[" action " produces " produces "]: ")]
-      (when-not (contains-it? action actions)
-        (error (str "Error when parsing relationship " relationship-string action " is not a defined action")))
-      (when-not (contains-it? produces data)
-        (error (str "Error when parsing relationship " relationship-string data " is not a defined data")))))
+      (error-when-missing action actions (str "Error when parsing relationship " relationship-string action " is not a defined action"))
+      (error-when-missing produces data (str "Error when parsing relationship " relationship-string data " is not a defined data"))))
 
   (doseq [[action requires] action-requires]
     (let [relationship-string (str "[" action " requires " requires "]: ")]
-      (when-not (contains-it? action actions)
-        (error (str "Error when parsing relationship " relationship-string action " is not a defined action")))
-      (when-not (contains-it? requires data)
-        (error (str "Error when parsing relationship " relationship-string requires " is not a defined data")))))
+      (error-when-missing action actions (str "Error when parsing relationship " relationship-string action " is not a defined action"))
+      (error-when-missing requires data (str "Error when parsing relationship " relationship-string requires " is not a defined data"))))
 
   (doseq [[role performs] role-performs]
     (let [relationship-string (str "[" role " performs " performs "]: ")]
-      (when-not (contains-it? role roles)
-        (error (str "Error when parsing relationship " relationship-string role " is not a defined role")))
-      (when-not (contains-it? performs actions)
-        (error (str "Error when parsing relationship " relationship-string performs " is not a defined action")))))
+      (error-when-missing role roles (str "Error when parsing relationship " relationship-string role " is not a defined role"))
+      (error-when-missing performs actions (str "Error when parsing relationship " relationship-string performs " is not a defined action"))))
 
   (doseq [{:keys [action requires condition-argument]} action-requires-conditional]
     (let [relationship-string (str "[" action " conditionally requires " requires " depending on " condition-argument "]: ")]
-      (when-not (contains-it? action actions)
-        (error "Error when parsing relationship " relationship-string action " is not a defined action"))
-      (when-not (contains-it? requires data)
-        (error (str "Error when parsing relationship " relationship-string requires " is not a defined data")))
-      (when-not (contains-it? condition-argument data)
-        (error (str "Error when parsing relationship " relationship-string condition-argument " is not a defined data")))))
+      (error-when-missing action actions (error "Error when parsing relationship " relationship-string action " is not a defined action"))
+      (error-when-missing requires data (str "Error when parsing relationship " relationship-string requires " is not a defined data"))
+      (error-when-missing condition-argument data (str "Error when parsing relationship " relationship-string condition-argument " is not a defined data"))))
   true)
 
 (s/def ::relationship (s/coll-of keyword? :kind vector? :count 2))
@@ -136,7 +135,33 @@
 
 (defn create-model
   "Creates a process model to be used by core functions.
-   Takes a map with a strict structure as input, check specs or tests"
+   Takes a map with a strict structure as input"
+  {:test (fn []
+           (is (create-model {:actions                     [:call-mom
+                                                            :call-dad
+                                                            :call-grandma]
+
+                              :data                        [:mom-number
+                                                            :mom-info
+                                                            :dad-info]
+
+                              :roles                       [:me]
+
+                              :action-produces             [[:call-mom :mom-info]
+                                                            [:call-dad :dad-info]]
+
+                              :action-requires             [[:call-mom :mom-number]
+                                                            [:call-dad :mom-info]]
+
+                              :action-requires-conditional [{:action             :call-grandma
+                                                             :requires           :dad-info
+                                                             :condition          (fn [mom-info]
+                                                                                   (not (:grandma-number mom-info)))
+                                                             :condition-argument :mom-info}]
+
+                              :role-performs               [[:me :call-dad]
+                                                            [:me :call-mom]
+                                                            [:me :call-grandma]]})))}
   [input]
   {:pre [(validate-spec-and-rules input)]}
   (let [actions-arg (:actions input)
