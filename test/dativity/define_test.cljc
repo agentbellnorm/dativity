@@ -1,7 +1,14 @@
 (ns dativity.define-test
   (:require [clojure.test :refer [deftest testing]]
             [ysera.test :refer [is= is is-not error?]]
-            [dativity.define :refer [create-model action-requires-conditional]]))
+            [dativity.define :refer [create-model
+                                     action-requires-conditional
+                                     add-entity-to-model
+                                     add-relationship-to-model
+                                     action-produces
+                                     data
+                                     action]]
+            [dativity.core :as c]))
 
 (deftest create-model-spec-validations
   (testing "the input has to have the right keys"
@@ -158,3 +165,48 @@
                                                               :condition          some?
                                                               :condition-argument :tjatte}]})))))
 
+(deftest define-then-add
+  (testing "it should be possible to define a model using create model and then adding to it incrementally"
+    (as-> {:actions                     [:call-mom
+                                         :call-dad
+                                         :call-grandma]
+
+           :data                        [:mom-number
+                                         :mom-info
+                                         :dad-info]
+
+           :roles                       [:me]
+
+           :action-produces             [[:call-mom :mom-info]
+                                         [:call-dad :dad-info]]
+
+           :action-requires             [[:call-mom :mom-number]
+                                         [:call-dad :mom-info]]
+
+           :action-requires-conditional [{:action             :call-grandma
+                                          :requires           :dad-info
+                                          :condition          (fn [mom-info]
+                                                                (not (:grandma-number mom-info)))
+                                          :condition-argument :mom-info}]
+
+           :role-performs               [[:me :call-dad]
+                                         [:me :call-mom]
+                                         [:me :call-grandma]]} $
+          (create-model $)
+          (add-entity-to-model $ (action :call-brother))
+          (do
+            (is= (c/all-actions $) #{:call-mom :call-dad :call-grandma :call-brother}) $)
+          (add-entity-to-model $ (data :brother-info))
+          (add-relationship-to-model $ (action-produces :call-brother :brother-info))
+          (do
+            (is= (c/data-produced-by-action $ :call-brother) #{:brother-info}) $)
+          (add-relationship-to-model $ (action-requires-conditional :call-grandma
+                                                                    :brother-info
+                                                                    (fn [dad-info]
+                                                                      (not (:grandma-number dad-info)))
+                                                                    :dad-info))
+          (do
+            (is= (c/data-prereqs-for-action $ (c/add-data {} :dad-info {:hej "123"}) :call-grandma)
+                 #{:brother-info})
+            (is= (c/data-prereqs-for-action $ (c/add-data {} :dad-info {:grandma-number "123"}) :call-grandma)
+                 #{}) $))))
