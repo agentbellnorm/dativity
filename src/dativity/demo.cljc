@@ -310,6 +310,19 @@
 
 
 
+;; are the loan details gone from your state?
+
+(:loan-details (deref case-atom))
+
+
+
+
+
+
+
+
+
+
 
 ;; What can the different roles do now?
 

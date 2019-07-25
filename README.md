@@ -63,10 +63,14 @@ Given a process definition and a set of collected data, Dativity can answer ques
 
 #### Invalidating 
 Sometimes a user goes has to go back and change data. 
-Then all subsequent (in the sense that the changed data is required by other actions) actions need to be invalidated.
+Then all data that is produced 'subsequently' has to be invalidated.
 Dativity has support for this type of scenario, where the case is 'rewinded' to the action that was re-done. Previously entered data is kept, but 'uncommitted', and depending actions need to be performed again.
+[see example.](#invalidation)
+
 
 #### Conditional requirements
+It is possible to specify that a data is required by an action if and only if a given predicate is true. The condition depends on a specified data.
+[see example.](#conditionally-required-data)
 
 <a name="examples"/>
 
@@ -79,58 +83,54 @@ The case data is just a map
 (def case {})
 ```
 
-Defining an empty case model
-```clojure
-(def case-model (dativity.define/empty-case-model))
-```
-
-Add action, data and role entities to the model
+Define a case model with actions, data, roles and their relationships.
 ```clojure
 (def case-model
-  (-> case-model
-      ; Actions
-      (dativity.define/add-entity-to-model (dativity.define/action :create-case))
-      (dativity.define/add-entity-to-model (dativity.define/action :enter-loan-details))
-      (dativity.define/add-entity-to-model (dativity.define/action :produce-credit-application-document))
-      (dativity.define/add-entity-to-model (dativity.define/action :sign-credit-application-document))
-      (dativity.define/add-entity-to-model (dativity.define/action :payout-loan))
-      ; Data entities
-      (dativity.define/add-entity-to-model (dativity.define/data :case-id))
-      (dativity.define/add-entity-to-model (dativity.define/data :customer-id))
-      (dativity.define/add-entity-to-model (dativity.define/data :loan-details))
-      (dativity.define/add-entity-to-model (dativity.define/data :credit-application-document))
-      (dativity.define/add-entity-to-model (dativity.define/data :applicant-signature))
-      (dativity.define/add-entity-to-model (dativity.define/data :officer-signature))
-      (dativity.define/add-entity-to-model (dativity.define/data :loan-number))
-      ; Roles
-      (dativity.define/add-entity-to-model (dativity.define/role :applicant))
-      (dativity.define/add-entity-to-model (dativity.define/role :system))
-      (dativity.define/add-entity-to-model (dativity.define/role :officer))
-      ; Production edges
-      (dativity.define/add-relationship-to-model (dativity.define/action-produces :create-case :customer-id))
-      (dativity.define/add-relationship-to-model (dativity.define/action-produces :create-case :case-id))
-      (dativity.define/add-relationship-to-model (dativity.define/action-produces :enter-loan-details :loan-details))
-      (dativity.define/add-relationship-to-model (dativity.define/action-produces :produce-credit-application-document :credit-application-document))
-      (dativity.define/add-relationship-to-model (dativity.define/action-produces :sign-credit-application-document :applicant-signature))
-      (dativity.define/add-relationship-to-model (dativity.define/action-produces :sign-credit-application-document :officer-signature))
-      (dativity.define/add-relationship-to-model (dativity.define/action-produces :payout-loan :loan-number))
-      ; Prerequisite edges
-      (dativity.define/add-relationship-to-model (dativity.define/action-requires :enter-loan-details :case-id))
-      (dativity.define/add-relationship-to-model (dativity.define/action-requires :produce-credit-application-document :loan-details))
-      (dativity.define/add-relationship-to-model (dativity.define/action-requires :produce-credit-application-document :customer-id))
-      (dativity.define/add-relationship-to-model (dativity.define/action-requires :sign-credit-application-document :credit-application-document))
-      (dativity.define/add-relationship-to-model (dativity.define/action-requires :payout-loan :applicant-signature))
-      (dativity.define/add-relationship-to-model (dativity.define/action-requires :payout-loan :officer-signature))
-      ; Role-action edges
-      (dativity.define/add-relationship-to-model (dativity.define/role-performs :applicant :create-case))
-      (dativity.define/add-relationship-to-model (dativity.define/role-performs :applicant :enter-loan-details))
-      (dativity.define/add-relationship-to-model (dativity.define/role-performs :applicant :sign-credit-application-document))
-      (dativity.define/add-relationship-to-model (dativity.define/role-performs :officer :sign-credit-application-document))
-      (dativity.define/add-relationship-to-model (dativity.define/role-performs :system :payout-loan))
-      (dativity.define/add-relationship-to-model (dativity.define/role-performs :system :produce-credit-application-document))))
+  (dativity.define/create-model
+    {:actions                     [:create-case
+                                   :enter-loan-details
+                                   :produce-credit-application-document
+                                   :sign-credit-application-document
+                                   :payout-loan]
+
+     :data                        [:case-id
+                                   :customer-id
+                                   :loan-details
+                                   :credit-application-document
+                                   :applicant-signature
+                                   :officer-signature
+                                   :loan-number]
+
+     :roles                       [:applicant
+                                   :system
+                                   :officer]
+
+     :action-produces             [[:create-case :customer-id]
+                                   [:create-case :case-id]
+                                   [:enter-loan-details :loan-details]
+                                   [:produce-credit-application-document :credit-application-document]
+                                   [:sign-credit-application-document :applicant-signature]
+                                   [:sign-credit-application-document :officer-signature]
+                                   [:payout-loan :loan-number]]
+
+     :action-requires             [[:enter-loan-details :case-id]
+                                   [:produce-credit-application-document :loan-details]
+                                   [:produce-credit-application-document :customer-id]
+                                   [:sign-credit-application-document :credit-application-document]
+                                   [:payout-loan :applicant-signature]
+                                   [:payout-loan :officer-signature]]
+
+     :role-performs               [[:applicant :create-case]
+                                   [:applicant :enter-loan-details]
+                                   [:applicant :sign-credit-application-document]
+                                   [:officer :sign-credit-application-document]
+                                   [:system :payout-loan]
+                                   [:system :produce-credit-application-document]]
+     :action-requires-conditional []}))
+
 ```
 
-Generate a picture of the process definition (requires graphviz, clj only).
+Generate an image of the process definition (requires graphviz, clj only).
 ```clojure
 (dativity.visualize/generate-png case-model)
 ```
@@ -196,15 +196,26 @@ Who can do what?
 (dativity.core/next-actions case-model case :officer)
 => #{:sign-credit-application-document}
 ```
+<a name="invalidation">
 
 #### Invalidation
 
-When a user goes 'back' and updates data, it is likely that the 'subsequent' data is no longer valid. For example, if the loan amount is changed, the produced application document is not valid anymore.
-In general, when an action is invalidated, all the data that is produced by that action is invalid, and data that is produced by actions that required the invalid data is invalidated recursively.
+A user might go back in your UI and change data, it is then likely that 'subsequent' data is no longer valid. For example, if the loan amount is changed, the produced application document is probably not valid anymore.
+
+Dativity supports this via the function invalidate-data. When a data is invalidated, all the data that is produced by actions that depend on the invalidated data (phew) is invalidated recursively.
+
+When data is invalidated, it is not deleted. The data is kept, but it is 'uncommitted' which means that dativity will tell you that actions that depend on the uncommitted data are not allowed.
 
 ```clojure
 (def case
-    (dativity.core/invalidate-action case-model case :enter-loan-details))
+    (dativity.core/invalidate-data case-model case :loan-details))
+```
+
+Are the loan details gone from the state? No.
+
+```clojure
+(:loan-details case)
+=> {:amount 100000 :purpose "home"}
 ```
 
 Now the only available action is to enter loan details again.
@@ -222,6 +233,8 @@ Now it's not possible to sign the application.
 (dativity.core/action-allowed? case-model case :sign-credit-application-document)
 => false
 ```
+
+<a name="conditionally-required-data">
 
 #### Conditionally required data
 
@@ -243,13 +256,22 @@ To say that applications for loans of more than 300 000 require signatures from 
 <a name="dependencies"/>
 
 ## Dependencies
-To generate graph pictures, install [graphviz](https://graphviz.gitlab.io/download/):
 
+#### graphviz
+To generate graph images you need [graphviz](https://graphviz.gitlab.io/download/).
+
+Check if it's installed on your system (mac):
+`dot -v`
+
+If not, install it: 
 `brew install graphviz`
 
-The core functionality of Dativity only depends on Clojure.
 
-[Ubergraph](https://github.com/Engelberg/ubergraph) is used as an adapter to graphviz for vizualisation and is only used by a utility namespace.
+####Ubergraph
+[Ubergraph](https://github.com/Engelberg/ubergraph) is used as an adapter to graphviz for vizualisation and is not used by the main namespaces so it will not be included in a cljs build.
+
+####Ysera
+[Ysera](https://github.com/tomas81508/ysera) is a convenience library from which testing and errror macros are used.
 
 <a name="license"/>
 

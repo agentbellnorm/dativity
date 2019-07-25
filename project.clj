@@ -5,7 +5,6 @@
             :url "https://github.com/agentbellnorm/dativity/blob/master/LICENSE"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [ysera "1.3.0"]
-                 [org.clojure/test.check "0.9.0"]
                  [org.clojure/clojurescript "1.10.520"]
                  [ubergraph "0.5.3"]]
   :test-paths ["test"]
