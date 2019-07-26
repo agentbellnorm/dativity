@@ -2,7 +2,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/dativity.svg)](https://clojars.org/dativity)
 
-Dativity is a stateless, data driven process engine library for Clojure and ClojureScript.
+Dativity is a stateless, data driven workflow engine library for Clojure and ClojureScript.
 
 It is inspired by the [Artifact centric business process model.](https://en.wikipedia.org/wiki/Artifact-centric_business_process_model#cite_note-VAN2005-6)
 
@@ -18,14 +18,15 @@ It is inspired by the [Artifact centric business process model.](https://en.wiki
 
 ## Motivation 
 
-Conventional process engines (like [Activiti](https://www.activiti.org/)) are centered around activities and the sequence in which they should be performed according to design.
+Conventional process engines such as [Activiti](https://www.activiti.org/) and [Camunda](https://camunda.com/) are centered around the sequence in which activities should be performed, often modeled using BPMN.
 
-The key idea of Dativity is to not say in what sequence actions in a process _should_ be performed. 
-But rather what actions are _possible_ to do given how actions depend on information. 
+The key idea of dativity is that the progression of data is the main driver of a workflow. It is achieved by revealing what actions _can_ be performed given how actions depend on data and what data is currently available, rather than what actions _should_ be performed.
 
-For example, you cannot accept or deny an insurance claim before it has been submitted - it can be reviewed precisely after it has been submitted.
+For example, an insurance claim can not be reviewed until it has been submitted. The action of submitting produces data - the claim, and the review action depends on it. As soon as there is a claim, it's possible to perform the review action.
 
-Process software should not keep its own state. The value the software is providing should be accessed through a pure function of two things: a static process-model, and a process instance consisting of data that evolves throughout the instance of the process as information is gathered.
+Many business process tools require a database to track the progress of a workflow. By adopting the Artifact centric business process model, dativity is able to provide the same core value as those other tools without requiring a dedicated database. Deciding how data is stored is up to you.
+
+By being stateless, dativity allows you to reduce the complexity of your application.
 
 [This blog post](https://morganbentell.wordpress.com/2019/03/18/dativity-the-stateless-process-engine/) offers a more extensive motivation.
 
@@ -34,15 +35,14 @@ Process software should not keep its own state. The value the software is provid
 ## Design
 
 Dativity models a process into three different entities:
-* Actions
+* Action
 * Data
-* Roles
+* Role
 
-The above entites relate in the following ways:
-* Data (green) can be _required_ by an action
-* An action (purple) _produces_ data
-* A Role (yellow) _performs_ an action
-
+The entites relate in the following ways:
+* Data (green) is _required_ by an action
+* Actions (purple) _produce_ data
+* Roles (yellow) _perform_ an action
 
 ![](dativity.png)
 _a simple credit application process_
@@ -56,13 +56,13 @@ In the above example, the action 'create case' produces the data 'case id' and '
 #### Basic functionality
 Given a process definition and a set of collected data, Dativity can answer questions like:
 * What actions can be performed next?
-* What actions can be performed by role X (user, system, officer...)
+* What actions can be performed next by role _r_
 * What actions have been performed?
-* Is action X allowed?
-* What data is required for action X?
+* Can action _a_ be performed?
+* What data is required for action _a_?
 
 #### Invalidating 
-Sometimes a user goes has to go back and change data. 
+Sometimes a user goes back and modify data. 
 Then all data that is produced 'subsequently' has to be invalidated.
 Dativity has support for this type of scenario, where the case is 'rewinded' to the action that was re-done. Previously entered data is kept, but 'uncommitted', and depending actions need to be performed again.
 [see example.](#invalidation)
@@ -164,7 +164,7 @@ Add some data to the case to simulate a few actions
     (dativity.core/add-data :loan-details {:amount 100000 :purpose "home"})))
 ```
 
-What actions were performed (simulated) so far?
+What actions have been completed?
 ```clojure
 (dativity.core/actions-performed case-definition case)
 => #{:enter-loan-details :create-case}
@@ -200,18 +200,18 @@ Who can do what?
 
 #### Invalidation
 
-A user might go back in your UI and change data, it is then likely that 'subsequent' data is no longer valid. For example, if the loan amount is changed, the produced application document is probably not valid anymore.
+A user might go back in your UI and modify data, it is then likely that 'subsequent' data is no longer valid. For example, if the loan amount is changed, the produced application document is probably not valid anymore.
 
-Dativity supports this via the function invalidate-data. When a data is invalidated, all the data that is produced by actions that depend on the invalidated data (phew) is invalidated recursively.
+Dativity supports this via the function invalidate-data. When a data is invalidated, all the data that is produced by actions that depend on the invalidated data is invalidated recursively.
 
-When data is invalidated, it is not deleted. The data is kept, but it is 'uncommitted' which means that dativity will tell you that actions that depend on the uncommitted data are not allowed.
+When data is invalidated, it is not deleted. The data is kept, but it is 'uncommitted' which means that dativity will say that actions that depend on the uncommitted data are not allowed.
 
 ```clojure
 (def case
     (dativity.core/invalidate-data case-model case :loan-details))
 ```
 
-Are the loan details gone from the state? No.
+Are the loan details gone from the case?
 
 ```clojure
 (:loan-details case)
@@ -228,7 +228,7 @@ Now the only available action is to enter loan details again.
 => #{}
 ```
 
-Now it's not possible to sign the application. 
+It's not possible to sign the credit application document. 
 ```clojure
 (dativity.core/action-allowed? case-model case :sign-credit-application-document)
 => false
@@ -238,7 +238,7 @@ Now it's not possible to sign the application.
 
 #### Conditionally required data
 
-An action-requires-data edge (arrow in the diagram) can be conditional. The requirement is enforced if and only if a given predicate is true. The predicate is a function of one data node.
+An action-requires-data edge (red arrow in the diagram) can be conditional. The requirement is enforced if and only if a given predicate is true. The predicate is a function of a given data node.
 
 To say that applications for loans of more than 300 000 require signatures from two officers we can write
 
