@@ -1,17 +1,19 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [2.0.0] - 2018-09-16
+## [2.0.0] - 2019-07-26
 ### Changed
 - Empty seqs are now treated as 'no data'.
 - The function `dativity.core/actions-performed-by-role` was renamed to `core/actions-allowed-by-role`
+- The function `dativity.define/empty-case-model` was renamed to `dativity.define/empty-process-model`
 - Colors and labels are added to the graph in `dativity.visualize` namespace instead of `dativity.define`
-- Using yseras test macros
 - Clojure 1.10.1 is used
 - ClojureScript 1.10.520 is used
 
 ### Added
-- added `dativity.core/invalidate-data`
+- New, less verbose way of defining the model with `dativity.define/create-model`. Old way is still available and used internally.
+- New core function `dativity.core/invalidate-data` that should be used instead of `dativity.core/invalidate-action`.
+- Using yseras test and error macros
 
-[Unreleased]: https://github.com/your-name/dativity/compare/0.1.1...HEAD
-[0.1.1]: https://github.com/your-name/dativity/compare/0.1.0...0.1.1
+## Deprecated
+- `dativity.core/invalidate-action`. Use `dativity.core/invalidate-data` instead.
