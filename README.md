@@ -1,4 +1,4 @@
-# dativity
+# Dativity
 
 
 
@@ -15,7 +15,7 @@ It is inspired by the [Artifact centric business process model.](https://en.wiki
 [Dependencies](#dependencies)  
 [License](#license)  
 
-##Latest version
+## Latest version
 Version 2.0.0 comes with new features, and some smaller but nontheless breaking changes. See [Changelog](https://github.com/agentbellnorm/dativity/blob/master/CHANGELOG.md).
 
 [![Clojars Project](https://img.shields.io/clojars/v/dativity.svg)](https://clojars.org/dativity)
