@@ -1,4 +1,4 @@
-(defproject dativity "1.0.1"
+(defproject dativity "2.0.0"
   :description "stateless, data driven process engine"
   :url "https://github.com/agentbellnorm/dativity"
   :license {:name "MIT"
@@ -10,7 +10,6 @@
   :test-paths ["test"]
   :source-paths ["src"]
   :plugins [[lein-cljsbuild "1.1.7"]]
-
   :cljsbuild {
               :builds [{:source-paths ["src"]
                         :compiler {:optimizations :whitespace
