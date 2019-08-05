@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [2.0.1] - 2019-08-05
+### Fixed
+- Bug that broke cljs compilation. [#3](https://github.com/agentbellnorm/dativity/issues/3)
+
 ## [2.0.0] - 2019-07-26
 ### Changed
 - Empty seqs are now treated as 'no data'.

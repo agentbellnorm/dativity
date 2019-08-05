@@ -16,7 +16,7 @@ It is inspired by the [Artifact centric business process model.](https://en.wiki
 [License](#license)  
 
 ## Latest version
-Version 2.0.0 comes with new features, and some smaller but nontheless breaking changes. See [Changelog](https://github.com/agentbellnorm/dativity/blob/master/CHANGELOG.md).
+Version 2.0.1 comes with new features, and some smaller but nontheless breaking changes. See [Changelog](https://github.com/agentbellnorm/dativity/blob/master/CHANGELOG.md).
 
 [![Clojars Project](https://img.shields.io/clojars/v/dativity.svg)](https://clojars.org/dativity)
 
@@ -273,10 +273,10 @@ If not, install it:
 `brew install graphviz`
 
 
-####Ubergraph
+#### Ubergraph
 [Ubergraph](https://github.com/Engelberg/ubergraph) is used as an adapter to graphviz for vizualisation and is not used by the main namespaces so it will not be included in a cljs build.
 
-####Ysera
+#### Ysera
 [Ysera](https://github.com/tomas81508/ysera) is a convenience library from which testing and errror macros are used.
 
 <a name="license"/>
