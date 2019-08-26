@@ -16,9 +16,10 @@ It is inspired by the [Artifact centric business process model.](https://en.wiki
 [License](#license)  
 
 ## Latest version
-Version 2.0.1 comes with new features, and some smaller but nontheless breaking changes. See [Changelog](https://github.com/agentbellnorm/dativity/blob/master/CHANGELOG.md).
 
 [![Clojars Project](https://img.shields.io/clojars/v/dativity.svg)](https://clojars.org/dativity)
+
+See [Changelog](https://github.com/agentbellnorm/dativity/blob/master/CHANGELOG.md) for release contents.
 
 <a name="motivation"/>
 

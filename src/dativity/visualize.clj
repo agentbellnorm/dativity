@@ -49,6 +49,19 @@
                           :undirected-edges []})))
 
 (defn visualize
+  "Visualize the dativity graph
+
+  options is a map off attributes for the graph can be (from the Ubergraph doc):
+    :auto-label true (labels each node/edge with its attribute map)
+    :layout :dot, :neato, :fdp, :sfdp, :twopi, or :circo
+    :save {:filename _, :format _} where format is one of
+    :bmp :dot :eps :gif :ico :jpg :jpeg :pdf :png :ps :ps2 :svgz :tif :tiff :vmlz :wbmp
+
+  options can also be graph-viz attributes (see link below)
+
+  transform-node and transform-graph takes a node or an edge and return it with graph-viz attributes.
+
+  See graph-viz docs for details: https://graphviz.gitlab.io/_pages/doc/info/attrs.html"
   ([graph options]
    (visualize graph options default-transform-node default-transform-edge))
   ([graph options transform-node transform-edge]
