@@ -1,10 +1,10 @@
-(defproject dativity "2.0.1"
+(defproject dativity "2.0.2-SNAPSHOT"
   :description "stateless, data driven process engine"
   :url "https://github.com/agentbellnorm/dativity"
   :license {:name "MIT"
             :url "https://github.com/agentbellnorm/dativity/blob/master/LICENSE"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [ysera "1.3.0"]
+                 [ysera "2.0.1"]
                  [org.clojure/clojurescript "1.10.520"]
                  [ubergraph "0.5.3"]]
   :test-paths ["test"]

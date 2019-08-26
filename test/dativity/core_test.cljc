@@ -1,7 +1,6 @@
 (ns dativity.core-test
   (:require
-    [ysera.test :refer [is= is is-not]]
-    [clojure.test :refer [deftest testing]]
+    [ysera.test :refer [is= is is-not deftest testing]]
     [dativity.core :as c]
     [dativity.define :as d]))
 

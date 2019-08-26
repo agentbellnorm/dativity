@@ -1,6 +1,5 @@
 (ns dativity.define-test
-  (:require [clojure.test :refer [deftest testing]]
-            [ysera.test :refer [is= is is-not error?]]
+  (:require [ysera.test :refer [is= is is-not error? deftest testing]]
             [dativity.define :refer [create-model
                                      action-requires-conditional
                                      add-entity-to-model
