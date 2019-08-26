@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [2.1.0] 2019-08-26
+### Added
+- New function `dativity.visualize/visualize` that makes visualization more flexible by accepting graphviz attributes.
+
+### Fixed
+- Now compiles to cljs properly. Bumped ysera that now lets you import macros from cljs with :refer. [#4](https://github.com/agentbellnorm/dativity/issues/4)
+
 ## [2.0.1] - 2019-08-05
 ### Fixed
 - Bug that broke cljs compilation. [#3](https://github.com/agentbellnorm/dativity/issues/3)
