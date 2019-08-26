@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [ysera "2.0.1"]
                  [org.clojure/clojurescript "1.10.520"]
-                 [ubergraph "0.5.3"]]
+                 [ubergraph "0.8.1"]]
   :test-paths ["test"]
   :source-paths ["src"]
   :plugins [[lein-cljsbuild "1.1.7"]]
