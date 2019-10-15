@@ -56,8 +56,8 @@
                            (add-relationship-to-model (action-produces :thing-to-do :thing-to-know)))]
              (is= 1 (graph/count-edges graph))
              (is= 2 (graph/count-nodes graph))))}
-  [case relationship]
-  (graph/add-directed-edge case relationship))
+  [model relationship]
+  (graph/add-directed-edge model relationship))
 
 ;; below is code related to creating the model via create-model.
 
