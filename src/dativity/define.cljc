@@ -35,6 +35,12 @@
                   :condition      predicate
                   :data-parameter data-parameter}])
 
+(defn action-possible-conditional
+  "predicate is a function that takes one argument, the provided prereq data node"
+  [action prereq predicate]
+  [action prereq {:association :possible-conditional
+                  :condition   predicate}])
+
 (defn role-performs
   [role action]
   [role action {:association :performs}])
@@ -74,7 +80,14 @@
     (error err-msg)))
 
 (defn- validate-relationships
-  [{:keys [actions data roles action-produces action-requires action-requires-conditional role-performs]}]
+  [{:keys [actions
+           data
+           roles
+           action-produces
+           action-requires
+           action-requires-conditional
+           action-possible-conditional
+           role-performs]}]
   (doseq [[action produces] action-produces]
     (let [relationship-string (str "[" action " produces " produces "]: ")]
       (error-when-missing action actions (str "Error when parsing relationship " relationship-string action " is not a defined action"))
@@ -95,6 +108,11 @@
       (error-when-missing action actions (str "Error when parsing relationship " relationship-string action " is not a defined action"))
       (error-when-missing requires data (str "Error when parsing relationship " relationship-string requires " is not a defined data"))
       (error-when-missing condition-argument data (str "Error when parsing relationship " relationship-string condition-argument " is not a defined data"))))
+
+  (doseq [{:keys [action requires]} action-possible-conditional]
+    (let [relationship-string (str "[" requires " conditionally enables " action "]: ")]
+      (error-when-missing action actions (str "Error when parsing relationship " relationship-string action " is not a defined action"))
+      (error-when-missing requires data (str "Error when parsing relationship " relationship-string requires " is not a defined data"))))
   true)
 
 (s/def ::relationship (s/coll-of keyword? :kind vector? :count 2))
@@ -115,7 +133,16 @@
                                                            ::condition
                                                            ::condition-argument]))
 
+
 (s/def ::action-requires-conditional (s/coll-of ::action-requires-conditional-item
+                                                :kind vector?
+                                                :distinct true))
+
+(s/def ::action-possible-conditional-item (s/keys :req-un [::action
+                                                           ::requires
+                                                           ::condition]))
+
+(s/def ::action-possible-conditional (s/coll-of ::action-possible-conditional-item
                                                 :kind vector?
                                                 :distinct true))
 
@@ -125,6 +152,7 @@
                                       ::action-produces
                                       ::action-requires
                                       ::action-requires-conditional
+                                      ::action-possible-conditional
                                       ::role-performs]))
 
 (defn- validate-spec-and-rules

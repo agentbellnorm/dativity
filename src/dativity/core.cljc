@@ -178,9 +178,10 @@
        (map :dest)
        (set)))
 
-(defn data-prereqs-for-action                               ;; depends on case to determine conditional requirements
-  "Returns data nodes that are required by action nodes. Conditional requirements are included
-  if and only if the conditions are true."
+(defn data-prereqs-for-action
+  "Returns data nodes that are required by action nodes.
+  The case is needed in order to determine conditional requirements.
+  Conditional requirements are included if and only if the conditions are true."
   {:test (fn []
            (is= (data-prereqs-for-action (test-process) {} :a) #{:b :e})
            (is= (data-prereqs-for-action (test-process) {} :b) #{:e})
@@ -366,9 +367,9 @@
       loop-case)))
 
 (defn invalidate-action
-  "Uncommits the data produced by the specified action, and then recursively performs
-  the same procedure on all actions that require the data produced by the specified action.
-  The use case of this function itself is not clear, invalidate-data should be used instead."
+  "The use case of this function is not clear, invalidate-data should be used instead.
+   Uncommits the data produced by the specified action, and then recursively performs
+   the same procedure on all actions that require the data produced by the specified action."
   {:test (fn []
            (as-> {} case
                  (add-data case :c "far out")
@@ -405,13 +406,15 @@
          seen-actions #{}]
     (if loop-action
       (recur (uncommit-datas-produced-by-action process-definition loop-case loop-action)
-             (vec (difference (set (concat (actions-that-can-be-performed-after-action process-definition loop-action) loop-actions)) seen-actions))
+             (vec (difference
+                    (set (concat (actions-that-can-be-performed-after-action process-definition loop-action) loop-actions))
+                    seen-actions))
              (conj seen-actions loop-action))
       loop-case)))
 
 (defn invalidate-data
   "Uncommits a given data node, and recursively uncommits all data that was produced
-  by actions that require the given data node"
+  by actions that require the provided data node"
   [process-definition case data]
   (invalidate-action process-definition case (action-producing-data process-definition data)))
 
