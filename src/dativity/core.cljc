@@ -294,18 +294,13 @@
                                                                    (add-data :b {:power-level 8900})))
                 #{:i :f :g})
            (is= (actions-with-prereqs-fulfilled (test-process) (add-data {} :k 3)) #{:f :g :l})
-           (is= (actions-with-prereqs-fulfilled (test-process) (add-data {} :k -3)) #{:f :g :m})
-           )}
+           (is= (actions-with-prereqs-fulfilled (test-process) (add-data {} :k -3)) #{:f :g :m}))}
   [process-definition case]
   (->> (all-actions process-definition)
-       (reduce (fn [acc action]
-                 (let [prereqs (data-prereqs-for-action process-definition case action)]
-                   (if (every? true? (map (fn [prereq]
-                                            (prereq-fulfilled? process-definition case action prereq))
-                                          prereqs))
-                     (conj acc action)
-                     acc)))
-               #{})))
+       (filter (fn [action]
+                 (every? #(prereq-fulfilled? process-definition case action %)
+                         (data-prereqs-for-action process-definition case action))))
+       (set)))
 
 (defn actions-performed
   "Returns all actions that were performed on a case"
