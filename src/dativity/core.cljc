@@ -48,7 +48,6 @@
       (define/add-relationship-to-model (define/role-performs :a :c))
       (define/add-relationship-to-model (define/role-performs :c :d))))
 
-
 (comment (dativity.visualize/generate-png (test-process)))
 
 (defn add-data                                              ;; TODO: Should subsequent actions be invalidated if the data was already there?
@@ -86,7 +85,6 @@
   [case key value]
   (-> (assoc case key value)
       (assoc-in [:dativity/commits key] true)))
-
 
 (defn all-actions
   "Returns all actions in a case-model."
@@ -264,6 +262,11 @@
        (let [condition-fn (graph/attr model action precondition :condition)]
          (condition-fn (get case precondition)))))
 
+(defn- action-has-prereqs-fulfilled?
+  [process-definition case action]
+  (every? #(prereq-fulfilled? process-definition case action %)
+          (data-prereqs-for-action process-definition case action)))
+
 (defn- actions-with-prereqs-fulfilled
   {:test (fn []
            (is= (actions-with-prereqs-fulfilled (test-process) {}) #{:f :g})
@@ -297,10 +300,14 @@
            (is= (actions-with-prereqs-fulfilled (test-process) (add-data {} :k -3)) #{:f :g :m}))}
   [process-definition case]
   (->> (all-actions process-definition)
-       (filter (fn [action]
-                 (every? #(prereq-fulfilled? process-definition case action %)
-                         (data-prereqs-for-action process-definition case action))))
+       (filter #(action-has-prereqs-fulfilled? process-definition case %))
        (set)))
+
+(defn- action-performed?
+  [process-definition case action]
+  (and (not-empty (data-produced-by-action process-definition action))
+       (every? #(has-committed-data? case %)
+               (data-produced-by-action process-definition action))))
 
 (defn actions-performed
   "Returns all actions that were performed on a case"
@@ -314,13 +321,8 @@
            (is= (actions-performed (test-process) {}) #{}))}
   [process-definition case]
   (->> (all-actions process-definition)
-       (reduce (fn [acc action]
-                 (let [produced-data (data-produced-by-action process-definition action)]
-                   (cond
-                     (empty? produced-data) acc
-                     (every? true? (map (fn [data] (has-committed-data? case data)) produced-data)) (conj acc action)
-                     :default acc)))
-               #{})))
+       (filter #(action-performed? process-definition case %))
+       (set)))
 
 (defn next-actions
   "Returns a set of actions that are allowed to perform and are also not yet performed.
@@ -363,8 +365,7 @@
   (loop [loop-case case
          [data & datas] (vec (data-produced-by-action process-definition action))]
     (if data
-      (recur (uncommit-data loop-case data)
-             datas)
+      (recur (uncommit-data loop-case data) datas)
       loop-case)))
 
 (defn invalidate-action
