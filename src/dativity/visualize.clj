@@ -30,6 +30,8 @@
                            :label "requires"}
                 :requires-conditional {:color :purple
                                        :label "requires?"}
+                :possible-conditional {:color :brown
+                                       :label "possible?"}
                 :performs {:color :orange
                            :label "does"}
                 (error (format "could not add visuals to %s" edge)))))

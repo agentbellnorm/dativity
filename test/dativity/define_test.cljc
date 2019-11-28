@@ -193,47 +193,47 @@
                                                               :condition-argument :tjatte}]}))))
          (testing "action-possibe-conditional. action must exist"
                   (error? (create-model {:actions                     []
-                                            :data                        [:fnatte :tjatte]
-                                            :roles                       []
-                                            :action-produces             []
-                                            :action-requires             []
-                                            :role-performs               []
-                                            :action-possible-conditional [{:action             :knatte
-                                                                           :requires           :fnatte
-                                                                           :condition          some?
-                                                                           :condition-argument :tjatte}]
-                                            :action-requires-conditional []})))
+                                         :data                        [:fnatte :tjatte]
+                                         :roles                       []
+                                         :action-produces             []
+                                         :action-requires             []
+                                         :role-performs               []
+                                         :action-possible-conditional [{:action             :knatte
+                                                                        :requires           :fnatte
+                                                                        :condition          some?
+                                                                        }]
+                                         :action-requires-conditional []})))
 
-         (testing "action-possible-conditional. data must exist"
+         (testing "action-possible-conditional. condition must be function"
                   (error? (create-model {:actions                     [:knatte]
-                                            :data                        [:tjatte]
-                                            :roles                       []
-                                            :action-produces             []
-                                            :action-requires             []
-                                            :role-performs               []
-                                            :action-possible-conditional [{:action             :knatte
-                                                                           :requires           :fnatte
-                                                                           :condition          some?}]
-                                            :action-requires-conditional []})))
+                                         :data                        [:tjatte]
+                                         :roles                       []
+                                         :action-produces             []
+                                         :action-requires             []
+                                         :role-performs               []
+                                         :action-possible-conditional [{:action             :knatte
+                                                                        :condition-argument :tjatte
+                                                                        :condition          1337}]
+                                         :action-requires-conditional []})))
 
-         (testing "action-possible-conditional. data must exist"
+         (testing "action-possible-conditional. condition argument must be data"
                   (error? (create-model {:actions                     [:knatte]
-                                            :data                        [:fnatte]
-                                            :roles                       []
-                                            :action-produces             []
-                                            :action-requires             []
-                                            :role-performs               []
-                                            :action-possible-conditional [{:action             :knatte
-                                                                           :requires           :fnatte
-                                                                           :condition          some?}]
-                                            :action-requires-conditional []}))))
+                                         :data                        [:fnatte]
+                                         :roles                       []
+                                         :action-produces             []
+                                         :action-requires             []
+                                         :role-performs               []
+                                         :action-possible-conditional [{:action             :knatte
+                                                                        :condition-argument :tjatte
+                                                                        :condition          some?}]
+                                         :action-requires-conditional []}))))
 
 (deftest define-then-add
   (testing "it should be possible to define a model using create model and then adding to it incrementally"
     (as-> {:actions                     [:call-mom
                                          :call-dad
                                          :call-grandma
-                                         :plan-golf]
+                                         :play-golf]
 
            :data                        [:mom-number
                                          :mom-info
@@ -255,8 +255,8 @@
                                                                 (not (:grandma-number mom-info)))
                                           :condition-argument :mom-info}]
 
-           :action-possible-conditional [{:action :plan-golf
-                                          :requires :grandma-info
+           :action-possible-conditional [{:action :play-golf
+                                          :condition-argument :grandma-info
                                           :condition (fn [grandma-info]
                                                        (:is-healthy grandma-info))}]
 
@@ -266,7 +266,7 @@
           (create-model $)
           (add-entity-to-model $ (action :call-brother))
           (do
-            (is= (c/all-actions $) #{:call-mom :call-dad :call-grandma :call-brother :plan-golf}) $)
+            (is= (c/all-actions $) #{:call-mom :call-dad :call-grandma :call-brother :play-golf}) $)
           (add-entity-to-model $ (data :brother-info))
           (add-relationship-to-model $ (action-produces :call-brother :brother-info))
           (do
@@ -283,11 +283,11 @@
                  #{}) $)
 
           ;; possible conditional
-          (add-entity-to-model $ (action :plan-crosswords))
-          (add-relationship-to-model $ (action-possible-conditional :plan-crosswords
+          (add-entity-to-model $ (action :do-crosswords))
+          (add-relationship-to-model $ (action-possible-conditional :do-crosswords
                                                                     :grandma-info
                                                                     (fn [grandma-info]
                                                                       (not (:is-healthy grandma-info)))))
           (do
-            (is= (c/data-prereqs-for-action $ {} :plan-crosswords) #{:grandma-info})
-            (is= (c/data-prereqs-for-action $ {} :plan-golf) #{:grandma-info})))))
+            (is= (c/data-prereqs-for-action $ {} :do-crosswords) #{:grandma-info})
+            (is= (c/data-prereqs-for-action $ {} :play-golf) #{:grandma-info}) $))))

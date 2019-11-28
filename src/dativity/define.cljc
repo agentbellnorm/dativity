@@ -2,6 +2,7 @@
   (:require [ysera.test :refer [is= is is-not error?]]
             [ysera.error :refer [error]]
             [clojure.spec.alpha :as s]
+            [dativity.spec :as spec]
             [dativity.graph :as graph]))
 
 (defn empty-process-model
@@ -109,57 +110,44 @@
       (error-when-missing requires data (str "Error when parsing relationship " relationship-string requires " is not a defined data"))
       (error-when-missing condition-argument data (str "Error when parsing relationship " relationship-string condition-argument " is not a defined data"))))
 
-  (doseq [{:keys [action requires]} action-possible-conditional]
-    (let [relationship-string (str "[" requires " conditionally enables " action "]: ")]
+  (doseq [{:keys [action condition-argument]} action-possible-conditional]
+    (let [relationship-string (str "[" condition-argument " conditionally enables " action "]: ")]
       (error-when-missing action actions (str "Error when parsing relationship " relationship-string action " is not a defined action"))
-      (error-when-missing requires data (str "Error when parsing relationship " relationship-string requires " is not a defined data"))))
+      (error-when-missing condition-argument data (str "Error when parsing relationship " relationship-string condition-argument " is not a defined data"))))
   true)
-
-(s/def ::relationship (s/coll-of keyword? :kind vector? :count 2))
-
-(s/def ::actions (s/coll-of keyword? :kind vector?))
-(s/def ::data (s/coll-of keyword? :kind vector?))
-(s/def ::roles (s/coll-of keyword? :kind vector?))
-(s/def ::action-produces (s/coll-of ::relationship :kind vector?))
-(s/def ::action-requires (s/coll-of ::relationship :kind vector?))
-(s/def ::role-performs (s/coll-of ::relationship :kind vector?))
-
-(s/def ::action keyword?)
-(s/def ::requires keyword?)
-(s/def ::condition fn?)
-(s/def ::condition-argument keyword?)
-(s/def ::action-requires-conditional-item (s/keys :req-un [::action
-                                                           ::requires
-                                                           ::condition
-                                                           ::condition-argument]))
-
-
-(s/def ::action-requires-conditional (s/coll-of ::action-requires-conditional-item
-                                                :kind vector?
-                                                :distinct true))
-
-(s/def ::action-possible-conditional-item (s/keys :req-un [::action
-                                                           ::requires
-                                                           ::condition]))
-
-(s/def ::action-possible-conditional (s/coll-of ::action-possible-conditional-item
-                                                :kind vector?
-                                                :distinct true))
-
-(s/def ::model-input (s/keys :req-un [::actions
-                                      ::data
-                                      ::roles
-                                      ::action-produces
-                                      ::action-requires
-                                      ::action-requires-conditional
-                                      ::action-possible-conditional
-                                      ::role-performs]))
 
 (defn- validate-spec-and-rules
   [input]
-  (when-not (s/valid? ::model-input input)
-    (error (s/explain-str ::model-input input)))
+  (when-not (s/valid? ::spec/model-input input)
+    (error (s/explain-str ::spec/model-input input)))
   (validate-relationships input))
+
+(defmulti add-to-model (fn [_ t _] t))
+(defmethod add-to-model :actions [model _ actions]
+  (reduce (fn [model action-to-add] (add-entity-to-model model (action action-to-add))) model actions))
+
+(defmethod add-to-model :data [model _ datas]
+  (reduce (fn [model data-to-add] (add-entity-to-model model (data data-to-add))) model datas))
+
+(defmethod add-to-model :roles [model _ roles]
+  (reduce (fn [model role-to-add] (add-entity-to-model model (role role-to-add))) model roles))
+
+(defmethod add-to-model :action-produces [model _ _action-produces]
+  (reduce (fn [model [action produces]] (add-relationship-to-model model (action-produces action produces))) model _action-produces))
+
+(defmethod add-to-model :action-requires [model _ _action-requires]
+  (reduce (fn [model [action requires]] (add-relationship-to-model model (action-requires action requires))) model _action-requires))
+
+(defmethod add-to-model :action-requires-conditional [model _ _action-requires-conditional]
+  (reduce (fn [model {:keys [action requires condition condition-argument]}]
+            (add-relationship-to-model model (action-requires-conditional action requires condition condition-argument))) model _action-requires-conditional))
+
+(defmethod add-to-model :action-possible-conditional [model _ _action-possible-conditional]
+  (reduce (fn [model {:keys [action condition-argument condition]}]
+            (add-relationship-to-model model (action-possible-conditional action condition-argument condition))) model _action-possible-conditional))
+
+(defmethod add-to-model :role-performs [model _ _role-performs]
+  (reduce (fn [model [role action]] (add-relationship-to-model model (role-performs role action))) model _role-performs))
 
 (defn create-model
   "Creates a process model to be used by core functions.
@@ -187,30 +175,14 @@
                                                                                    (not (:grandma-number mom-info)))
                                                              :condition-argument :mom-info}]
 
+                              :action-possible-conditional [{:action             :call-grandma
+                                                             :condition-argument :dad-info
+                                                             :condition          (fn [mom-info]
+                                                                                   (not (:grandma-number mom-info)))}]
+
                               :role-performs               [[:me :call-dad]
                                                             [:me :call-mom]
                                                             [:me :call-grandma]]})))}
-  [arg-map]
-  {:pre [(validate-spec-and-rules arg-map)]}
-  (let [actions-arg (:actions arg-map)
-        data-arg (:data arg-map)
-        roles-arg (:roles arg-map)
-        action-produces-arg (:action-produces arg-map)
-        action-requires-arg (:action-requires arg-map)
-        action-requires-conditional-arg (:action-requires-conditional arg-map)
-        role-performs-arg (:role-performs arg-map)]
-    (as-> (empty-process-model) model
-          (reduce (fn [acc input-action]
-                    (add-entity-to-model acc (action input-action))) model actions-arg)
-          (reduce (fn [acc input-data]
-                    (add-entity-to-model acc (data input-data))) model data-arg)
-          (reduce (fn [acc input-role]
-                    (add-entity-to-model acc (role input-role))) model roles-arg)
-          (reduce (fn [acc [action produces]]
-                    (add-relationship-to-model acc (action-produces action produces))) model action-produces-arg)
-          (reduce (fn [acc [action requires]]
-                    (add-relationship-to-model acc (action-requires action requires))) model action-requires-arg)
-          (reduce (fn [acc [role performs]]
-                    (add-relationship-to-model acc (role-performs role performs))) model role-performs-arg)
-          (reduce (fn [acc {:keys [action requires condition condition-argument]}]
-                    (add-relationship-to-model acc (action-requires-conditional action requires condition condition-argument))) model action-requires-conditional-arg))))
+  [model-arguments]
+  {:pre [(validate-spec-and-rules model-arguments)]}
+  (reduce-kv add-to-model (empty-process-model) model-arguments))

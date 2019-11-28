@@ -53,6 +53,10 @@
   ([graph node attr-key] (get-in graph [:nodes node attr-key]))
   ([graph src dst attr-key] (get-in graph [:edges [src dst] attr-key])))
 
+(defn get-attr
+  [node-or-edge attr]
+  (get node-or-edge attr))
+
 (defn count-nodes
   {:test (fn []
            (is= 2 (-> (empty-graph)
