@@ -1,5 +1,8 @@
 # TODO
 
+* add get all roles
+* make all-actions take role
+
 * visualize without uberjar
 * Allow nested data objects
     * Use get-in and assoc-in

@@ -95,6 +95,14 @@
        (filter (fn [node] (= :action (graph/attr process-definition node :type))))
        (set)))
 
+(defn all-roles
+  {:test (fn []
+           (is= (all-roles (test-process)) #{:b :c :e :h}))}
+  [process-definition]
+  (->> (graph/nodes process-definition)
+       (filter (fn [node] (= :role (graph/attr process-definition node :type))))
+       (set)))t
+
 (defn case-has-data?
   "Returns truthy if the given data node exists regardless if it is committed or not.
    Treats values that are empty seqables as not having data"
