@@ -173,7 +173,7 @@ Add some data to the case to simulate a few actions
 
 What actions have been completed?
 ```clojure
-(dativity.core/actions-performed case-definition case)
+(dativity.core/actions-performed case-model case)
 => #{:enter-loan-details :create-case}
 ```
 
