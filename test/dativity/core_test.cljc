@@ -9,7 +9,7 @@
   (d/create-model
     {:actions                     [:create-case
                                    :consent-to-personal-data-retrieval-and-storage
-                                   :fetch-supplimentary-info
+                                   :fetch-supplementary-info
                                    :know-your-customer
                                    :add-economy
                                    :get-currently-owned-real-estate
@@ -46,7 +46,7 @@
                                    [:create-case :case-id]
                                    [:create-case :customer-id]
                                    [:create-collateral-link :collateral-link]
-                                   [:fetch-supplimentary-info :customer-info]
+                                   [:fetch-supplementary-info :customer-info]
                                    [:get-currently-owned-real-estate :currently-owned-real-estate]
                                    [:know-your-customer :know-your-customer-data]
                                    [:produce-credit-application-document :credit-application-reference]
@@ -76,7 +76,7 @@
                                    [:applicant :create-collateral-link]
                                    [:applicant :sign-credit-application-document]
                                    [:system :calculate-amortization]
-                                   [:system :fetch-supplimentary-info]
+                                   [:system :fetch-supplementary-info]
                                    [:system :get-currently-owned-real-estate]
                                    [:system :know-your-customer]]
      :action-requires-conditional [{:action             :create-collateral-link
@@ -89,7 +89,7 @@
                                     :condition          (fn [consent]
                                                           (:lmv consent))}
 
-                                   {:action             :fetch-supplimentary-info
+                                   {:action             :fetch-supplementary-info
                                     :condition-argument :consent
                                     :condition          (fn [consent]
                                                           (:uc consent))}
@@ -135,7 +135,7 @@
                                                    :lmv true
                                                    :pep true})
                         (do
-                          (is= (c/next-actions case-graph case) #{:fetch-supplimentary-info
+                          (is= (c/next-actions case-graph case) #{:fetch-supplementary-info
                                                                   :get-currently-owned-real-estate
                                                                   :add-collateral-valuation
                                                                   :add-economy
@@ -187,7 +187,7 @@
                                                    :pep true})
                         (c/add-data case :know-your-customer-data {:income 10000})
                         (do
-                          (is= (c/next-actions case-graph case) #{:fetch-supplimentary-info
+                          (is= (c/next-actions case-graph case) #{:fetch-supplementary-info
                                                                   :get-currently-owned-real-estate
                                                                   :add-collateral-valuation
                                                                   :add-economy})
@@ -202,7 +202,7 @@
                             (is (c/action-allowed? case-graph case :create-collateral-link)) case)
                         (c/invalidate-action case-graph case :consent-to-personal-data-retrieval-and-storage) ; INVALIDATION!!
                         (do
-                          (is-not (c/action-allowed? case-graph case :fetch-supplimentary-info))
+                          (is-not (c/action-allowed? case-graph case :fetch-supplementary-info))
                           (is-not (c/action-allowed? case-graph case :know-your-customer))
                           (is= (c/next-actions case-graph case) #{:add-collateral-valuation
                                                                   :consent-to-personal-data-retrieval-and-storage
@@ -252,7 +252,7 @@
                                                    :pep true})
                         (c/add-data case :know-your-customer-data {:income 10000})
                         (do
-                          (is= (c/next-actions case-graph case) #{:fetch-supplimentary-info
+                          (is= (c/next-actions case-graph case) #{:fetch-supplementary-info
                                                                   :get-currently-owned-real-estate
                                                                   :add-collateral-valuation
                                                                   :add-economy})
@@ -267,7 +267,7 @@
                             (is (c/action-allowed? case-graph case :create-collateral-link)) case)
                         (c/invalidate-data case-graph case :consent) ; INVALIDATION!!
                         (do
-                          (is-not (c/action-allowed? case-graph case :fetch-supplimentary-info))
+                          (is-not (c/action-allowed? case-graph case :fetch-supplementary-info))
                           (is-not (c/action-allowed? case-graph case :know-your-customer))
                           (is-not (c/action-allowed? case-graph case :get-currently-owned-real-estate))
                           (is-not (c/action-allowed? case-graph case :produce-credit-application-document))
@@ -324,35 +324,35 @@
                                                                     :region       "Pallen"
                                                                     :block        "11:45"}})
                         (do
-                          (is-not (c/action-allowed? case-graph case :fetch-supplimentary-info))
+                          (is-not (c/action-allowed? case-graph case :fetch-supplementary-info))
                           (is-not (c/action-allowed? case-graph case :get-currently-owned-real-estate))
                           (is-not (c/action-allowed? case-graph case :know-your-customer))
-                          (is-not (subset? #{:fetch-supplimentary-info :get-currently-owned-real-estate :know-your-customer}
+                          (is-not (subset? #{:fetch-supplementary-info :get-currently-owned-real-estate :know-your-customer}
                                            (c/next-actions case-graph case))) case)
                         (c/add-data case :consent {:uc  false
                                                    :lmv false
                                                    :pep false})
                         (do
-                          (is-not (c/action-allowed? case-graph case :fetch-supplimentary-info))
+                          (is-not (c/action-allowed? case-graph case :fetch-supplementary-info))
                           (is-not (c/action-allowed? case-graph case :get-currently-owned-real-estate))
                           (is-not (c/action-allowed? case-graph case :know-your-customer))
-                          (is-not (subset? #{:fetch-supplimentary-info :get-currently-owned-real-estate :know-your-customer}
+                          (is-not (subset? #{:fetch-supplementary-info :get-currently-owned-real-estate :know-your-customer}
                                            (c/next-actions case-graph case))) case)
                         (c/add-data case :consent {:uc  true
                                                    :lmv true
                                                    :pep true})
                         (do
-                          (is (c/action-allowed? case-graph case :fetch-supplimentary-info))
+                          (is (c/action-allowed? case-graph case :fetch-supplementary-info))
                           (is (c/action-allowed? case-graph case :get-currently-owned-real-estate))
                           (is (c/action-allowed? case-graph case :know-your-customer))
-                          (is (subset? #{:fetch-supplimentary-info :get-currently-owned-real-estate :know-your-customer}
+                          (is (subset? #{:fetch-supplementary-info :get-currently-owned-real-estate :know-your-customer}
                                        (c/next-actions case-graph case))) case)
                         (c/add-data case :consent {:uc  true
                                                    :lmv false
                                                    :pep true})
                         (do
-                          (is (c/action-allowed? case-graph case :fetch-supplimentary-info))
+                          (is (c/action-allowed? case-graph case :fetch-supplementary-info))
                           (is-not (c/action-allowed? case-graph case :get-currently-owned-real-estate))
                           (is (c/action-allowed? case-graph case :know-your-customer))
-                          (is (subset? #{:fetch-supplimentary-info :know-your-customer} (c/next-actions case-graph case)))
+                          (is (subset? #{:fetch-supplementary-info :know-your-customer} (c/next-actions case-graph case)))
                           (is-not (subset? #{:get-currently-owned-real-estate} (c/next-actions case-graph case))) case))))
