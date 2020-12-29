@@ -14,3 +14,5 @@ pom.xml.asc
 .hg/
 */case-graph.png
 .shadow-clj
+.clj-kondo
+.lsp
